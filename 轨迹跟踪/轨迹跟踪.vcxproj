@@ -127,13 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\LvDaiVehicle\LvDaiVehicle.cpp" />
-    <ClCompile Include="..\..\LvDaiVehicle\serialPort.cpp" />
-    <ClCompile Include="..\..\LvDaiVehicle\threadCom.cpp" />
+    <ClCompile Include="LvDaiVehicle.cpp" />
+    <ClCompile Include="serialPort.cpp" />
+    <ClCompile Include="threadCom.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\LvDaiVehicle\serialPort.h" />
-    <ClInclude Include="..\..\LvDaiVehicle\threadCom.h" />
+    <ClInclude Include="serialPort.h" />
+    <ClInclude Include="threadCom.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

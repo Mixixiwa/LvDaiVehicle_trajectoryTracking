@@ -15,21 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\LvDaiVehicle\LvDaiVehicle.cpp">
+    <ClCompile Include="LvDaiVehicle.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\LvDaiVehicle\serialPort.cpp">
+    <ClCompile Include="serialPort.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\LvDaiVehicle\threadCom.cpp">
+    <ClCompile Include="threadCom.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\LvDaiVehicle\serialPort.h">
+    <ClInclude Include="serialPort.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\LvDaiVehicle\threadCom.h">
+    <ClInclude Include="threadCom.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
