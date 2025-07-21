@@ -11,7 +11,7 @@ SERIALPORT* pserial = &serialPort;
 //按下q程序退出
 bool quitFlag = false;
 //W S A D按键
-bool fourKey[4] = {};
+bool fourKey[4] = {'W','S','A','D'};
 
 DWORD WINAPI PortSend(LPVOID lpParameter)
 {
@@ -27,19 +27,23 @@ DWORD WINAPI PortSend(LPVOID lpParameter)
 		//s键按下
 		if (fourKey[1])
 		{
-			//补充发送函数
+			pserial->SendRetreatCommand();
 		}
 		//a键按下
 		if (fourKey[2])
 		{
-			//补充发送函数
+			pserial->SendLeftTurnCommand();
 		}
 		//d键按下
 		if (fourKey[3])
 		{
-			//补充发送函数
+			pserial->SendRightTurnCommand();
 		}
-
+		//q健按下，退出程序
+		if (quitFlag)
+		{
+			break;
+		}
 		//循环发送当前转速问询指令
 		pserial->SendAskSpeedNow();
 		Sleep(50);
@@ -60,11 +64,11 @@ int main()
 	memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
 	if (pserial->m_comNum < 10)
 	{
-		sprintf(pserial->m_comBuf, "COM%d", pserial->m_comNum);
+		sprintf_s(pserial->m_comBuf, "COM%d", pserial->m_comNum);
 	}
 	else
 	{
-		sprintf(pserial->m_comBuf, "\\\\.\\COM%d", pserial->m_comNum);
+		sprintf_s(pserial->m_comBuf, "\\\\.\\COM%d", pserial->m_comNum);
 	}
 
 	if (!pserial->InitPort())

@@ -1,4 +1,5 @@
 #include "serialPort.h"
+
 SERIALPORT::SERIALPORT()
 {
 	m_hComm = NULL;
@@ -13,7 +14,7 @@ bool SERIALPORT::InitPort()
 {
 	if (m_hComm == NULL)
 	{
-		m_hComm = CreateFile(m_comBuf,
+		m_hComm = CreateFileA(m_comBuf,
 			GENERIC_READ | GENERIC_WRITE,//可读可写
 			0,
 			NULL,
@@ -22,7 +23,7 @@ bool SERIALPORT::InitPort()
 			NULL);
 		if (m_hComm == INVALID_HANDLE_VALUE)
 		{
-			printf("Serial Port Opem Failed:%d\n", GetLastError());
+			printf("Serial Port Open Failed:%d\n", GetLastError());
 			return false;
 		}
 	}
@@ -119,7 +120,195 @@ void SERIALPORT::SendFrontCommand()
 	buf[9] = 0;
 	buf[10] = (b >> 8) & 0xFF;
 	buf[11] = b & 0xFF;
-	SendPortMesg(buf, 12);
+	if (m_aSpeedNow < 0 && m_bSpeedNow < 0)
+	{
+		SendStopCommand();
+		SendPortMesg(buf, 12);
+	}
+	else
+	{
+		SendPortMesg(buf, 12);
+	}
+}
+
+void SERIALPORT::SendRetreatCommand()
+{
+	//A电机
+	int a = m_aSpeedCommand / 0.3;
+	//B电机
+	int b = m_bSpeedCommand / 0.3;
+	BYTE buf[50];
+	memset(buf, 0, sizeof(buf));
+	buf[0] = 0xE0;
+	buf[1] = 0x03;
+	buf[2] = 0;
+	buf[3] = 0;
+	buf[4] = 0xFF;
+	buf[5] = 0xFF;
+	buf[6] = (a >> 8) & 0xFF;
+	buf[7] = a & 0xFF;
+	buf[8] = 0xFF;
+	buf[9] = 0xFF;
+	buf[10] = (b >> 8) & 0xFF;
+	buf[11] = b & 0xFF;
+	
+	if (m_aSpeedNow > 0 && m_bSpeedNow > 0)
+	{
+		SendStopCommand();
+		SendPortMesg(buf, 12);
+	}
+	else
+	{
+		SendPortMesg(buf, 12);
+	}
+}
+
+void SERIALPORT::SendLeftTurnCommand()   //前进时，实现左转，A可正转可反转，B为正转
+{
+	//A电机为左电机
+	int a = m_aSpeedCommand / 0.3;
+	//B电机为右电机
+	int b = m_bSpeedCommand / 0.3;
+	BYTE buf[50],bufA0[50];
+	memset(buf, 0, sizeof(buf));
+	memset(bufA0, 0, sizeof(bufA0));
+	bufA0[0] = 0xE0;
+	bufA0[1] = 0x01;
+	bufA0[2] = 0;
+	bufA0[3] = 0;
+	bufA0[4] = 0;
+	bufA0[5] = 0;
+	bufA0[6] = 0;
+	bufA0[7] = 0;
+	bufA0[8] = 0;
+	bufA0[9] = 0;
+	bufA0[10] = 0;
+	bufA0[11] = 0;
+	if (a >= 0)  //A的目标指令为正转
+	{
+		buf[0] = 0xE0;
+		buf[1] = 0x03;
+		buf[2] = 0;
+		buf[3] = 0;
+		buf[4] = 0;
+		buf[5] = 0;
+		buf[6] = (a >> 8) & 0xFF;
+		buf[7] = a & 0xFF;
+		buf[8] = 0;
+		buf[9] = 0;
+		buf[10] = (b >> 8) & 0xFF;
+		buf[11] = b & 0xFF;
+		if (m_aSpeedNow >= 0)  //若A的转速为正转,直接发送目标指令
+		{
+			SendPortMesg(buf, 12);
+		}
+		else                    //若A的转速为反转,先发送0转速指令，再直接发送目标指令
+		{
+			SendPortMesg(bufA0, 12);
+			SendPortMesg(buf, 12);
+		}
+		
+	}
+	else
+	{
+		////若A的目标指令为反转
+		buf[0] = 0xE0;
+		buf[1] = 0x03;
+		buf[2] = 0;
+		buf[3] = 0;
+		buf[4] = 0xFF;
+		buf[5] = 0xFF;
+		buf[6] = (a >> 8) & 0xFF;
+		buf[7] = a & 0xFF;
+		buf[8] = 0;
+		buf[9] = 0;
+		buf[10] = (b >> 8) & 0xFF;
+		buf[11] = b & 0xFF;
+		
+		if (m_aSpeedNow < 0)  //若A的转速为反转,直接发送目标指令
+		{
+			SendPortMesg(buf, 12);
+		}
+		else                    //若A的转速为正转,先发送0转速指令，再直接发送目标指令
+		{
+			SendPortMesg(bufA0, 12);
+			SendPortMesg(buf, 12);
+		}	
+	}
+}
+
+void SERIALPORT::SendRightTurnCommand()//前进时，实现右转，A为正转，B可正转可反转
+{
+	//A电机为左电机
+	int a = m_aSpeedCommand / 0.3;
+	//B电机为右电机
+	int b = m_bSpeedCommand / 0.3;
+	BYTE buf[50], bufB0[50];
+	memset(buf, 0, sizeof(buf));
+	memset(bufB0, 0, sizeof(bufB0));
+	bufB0[0] = 0xE0;
+	bufB0[1] = 0x02;
+	bufB0[2] = 0;
+	bufB0[3] = 0;
+	bufB0[4] = 0;
+	bufB0[5] = 0;
+	bufB0[6] = 0;
+	bufB0[7] = 0;
+	bufB0[8] = 0;
+	bufB0[9] = 0;
+	bufB0[10] = 0;
+	bufB0[11] = 0;
+	if (b >= 0)  //B的目标指令为正转
+	{
+		buf[0] = 0xE0;
+		buf[1] = 0x03;
+		buf[2] = 0;
+		buf[3] = 0;
+		buf[4] = 0;
+		buf[5] = 0;
+		buf[6] = (a >> 8) & 0xFF;
+		buf[7] = a & 0xFF;
+		buf[8] = 0;
+		buf[9] = 0;
+		buf[10] = (b >> 8) & 0xFF;
+		buf[11] = b & 0xFF;
+		if (m_bSpeedNow >= 0)  //若B的转速为正转,直接发送目标指令
+		{
+			SendPortMesg(buf, 12);
+		}
+		else                    //若B的转速为反转,先发送0转速指令，再直接发送目标指令
+		{
+			SendPortMesg(bufB0, 12);
+			SendPortMesg(buf, 12);
+		}
+
+	}
+	else
+	{
+		////若B的目标指令为反转
+		buf[0] = 0xE0;
+		buf[1] = 0x03;
+		buf[2] = 0;
+		buf[3] = 0;
+		buf[4] = 0;
+		buf[5] = 0;
+		buf[6] = (a >> 8) & 0xFF;
+		buf[7] = a & 0xFF;
+		buf[8] = 0xFF;
+		buf[9] = 0xFF;
+		buf[10] = (b >> 8) & 0xFF;
+		buf[11] = b & 0xFF;
+
+		if (m_bSpeedNow < 0)  //若B的转速为反转,直接发送目标指令
+		{
+			SendPortMesg(buf, 12);
+		}
+		else                    //若B的转速为正转,先发送0转速指令，再直接发送目标指令
+		{
+			SendPortMesg(bufB0, 12);
+			SendPortMesg(buf, 12);
+		}
+	}
 }
 
 void SERIALPORT::Run()

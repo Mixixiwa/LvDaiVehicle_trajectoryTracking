@@ -34,8 +34,11 @@ public:
 	//前进指令
 	void SendFrontCommand();
 	//后退指令
+	void SendRetreatCommand();
 	//左转指令
+	void SendLeftTurnCommand();
 	//右转指令
+	void SendRightTurnCommand();
 
 private:
 	//处理接收数据
