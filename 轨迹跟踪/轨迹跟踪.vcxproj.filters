@@ -24,12 +24,18 @@
     <ClCompile Include="threadCom.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="VehicleSimulator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="serialPort.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="threadCom.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="VehicleSimulator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

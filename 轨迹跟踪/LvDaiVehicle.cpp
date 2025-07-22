@@ -4,134 +4,157 @@
 #include <iostream>
 #include "serialPort.h"
 #include <conio.h>
+#include "VehicleSimulator.h"
+#include <fstream>
 
-SERIALPORT serialPort;
-SERIALPORT* pserial = &serialPort;
+//SERIALPORT serialPort;
+//SERIALPORT* pserial = &serialPort;
+//
+////按下q程序退出
+//bool quitFlag = false;
+////W S A D按键
+//bool fourKey[4] = {'W','S','A','D'};
+//
+//DWORD WINAPI PortSend(LPVOID lpParameter)
+//{
+//	pserial->StartThread();
+//	while (!quitFlag)
+//	{
+//		//发送数据 
+//		//w按键按下：前进
+//		if (fourKey[0])
+//		{
+//			pserial->m_aSpeedCommand = 300;
+//			pserial->m_bSpeedCommand = 300;
+//			pserial->SendFrontCommand();
+//			Sleep(50);
+//		}
+//		//s键按下
+//		if (fourKey[1])
+//		{
+//			pserial->m_aSpeedCommand = -300;
+//			pserial->m_bSpeedCommand = -300;
+//			pserial->SendRetreatCommand();
+//			Sleep(50);
+//		}
+//		//a键按下
+//		if (fourKey[2])
+//		{
+//			pserial->m_aSpeedCommand = -300;
+//			pserial->m_bSpeedCommand = 300;
+//			pserial->SendLeftTurnCommand();
+//			Sleep(50);
+//		}
+//		//d键按下
+//		if (fourKey[3])
+//		{
+//			pserial->m_aSpeedCommand = 300;
+//			pserial->m_bSpeedCommand = -300;
+//			pserial->SendRightTurnCommand();
+//			Sleep(50);
+//		}
+//		//循环发送当前转速问询指令
+//		pserial->SendAskSpeedNow();
+//		Sleep(50);
+//	}
+//	//程序退出前，发送停车指令
+//	pserial->SendStopCommand();
+//
+//	pserial->StopThread();
+//	Sleep(10);
+//	cout << "发送线程已关闭" << endl;
+//	return 0;
+//}
 
-//按下q程序退出
-bool quitFlag = false;
-//W S A D按键
-bool fourKey[4] = {'W','S','A','D'};
+//int main()
+//{
+//	//串口号
+//	pserial->m_comNum = 2;
+//	memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
+//	if (pserial->m_comNum < 10)
+//	{
+//		sprintf_s(pserial->m_comBuf, "COM%d", pserial->m_comNum);
+//	}
+//	else
+//	{
+//		sprintf_s(pserial->m_comBuf, "\\\\.\\COM%d", pserial->m_comNum);
+//	}
+//
+//	if (!pserial->InitPort())
+//	{
+//		printf("Link Failed, Please Check the COM Number!=%s=\n", pserial->m_comBuf);
+//		return false;
+//	}
+//	else
+//	{
+//		printf("%s Opened!\n", pserial->m_comBuf);
+//	}
+//	HANDLE hSend = CreateThread(NULL, 0, &PortSend, NULL, 0, NULL);//创建发送线程
+//	int lifeSignal = 0; //心跳计时
+//	while (!quitFlag)
+//	{
+//		if (_kbhit())
+//		{
+//			switch (_getch())
+//			{
+//			case 'q':
+//				quitFlag = true;
+//				break;
+//			case 'w':
+//				fourKey[0] = true;
+//				break;
+//			case 's':
+//				fourKey[1] = true;
+//				break;
+//			case 'a':
+//				fourKey[2] = true;
+//				break;
+//			case 'd':
+//				fourKey[3] = true;
+//				break;
+//			default:
+//				break;
+//			}
+//		}
+//		else
+//		{
+//			memset(fourKey, 0, sizeof(fourKey));
+//		}
+//
+//		Sleep(50);
+//	}
+//	if (hSend != NULL)
+//	{
+//		WaitForSingleObject(hSend, INFINITE);
+//		CloseHandle(hSend);
+//		hSend = NULL;
+//	}
+//	cout << "程序退出！" << endl;
+//	Sleep(3000);
+//	return 0;
+//}
 
-DWORD WINAPI PortSend(LPVOID lpParameter)
+
+int main()     //测试履带车模型
 {
-	pserial->StartThread();
-	while (!quitFlag)
-	{
-		//发送数据 
-		//w按键按下：前进
-		if (fourKey[0])
-		{
-			pserial->m_aSpeedCommand = 300;
-			pserial->m_bSpeedCommand = 300;
-			pserial->SendFrontCommand();
-			Sleep(50);
-		}
-		//s键按下
-		if (fourKey[1])
-		{
-			pserial->m_aSpeedCommand = -300;
-			pserial->m_bSpeedCommand = -300;
-			pserial->SendRetreatCommand();
-			Sleep(50);
-		}
-		//a键按下
-		if (fourKey[2])
-		{
-			pserial->m_aSpeedCommand = -300;
-			pserial->m_bSpeedCommand = 300;
-			pserial->SendLeftTurnCommand();
-			Sleep(50);
-		}
-		//d键按下
-		if (fourKey[3])
-		{
-			pserial->m_aSpeedCommand = 300;
-			pserial->m_bSpeedCommand = -300;
-			pserial->SendRightTurnCommand();
-			Sleep(50);
-		}
-		//循环发送当前转速问询指令
-		pserial->SendAskSpeedNow();
-		Sleep(50);
-	}
-	//程序退出前，发送停车指令
-	pserial->SendStopCommand();
+    VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
+    std::ofstream fout("VehicleSimulator.csv");
 
-	pserial->StopThread();
-	Sleep(10);
-	cout << "发送线程已关闭" << endl;
-	return 0;
+    double dt = 0.01;
+
+    for (int i = 0; i < 1000; ++i) {
+        double vL = 0.5; // m/s
+        double vR = 1.0; // m/s
+        sim.step(vL, vR, dt);
+
+        const auto& s = sim.getState();
+        fout << s.x << "," << s.y << "," << s.psi << "\n";
+    }
+
+    fout.close();
+    std::cout << "Simulation complete.\n";
+    return 0;
 }
-
-int main()
-{
-	//串口号
-	pserial->m_comNum = 2;
-	memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
-	if (pserial->m_comNum < 10)
-	{
-		sprintf_s(pserial->m_comBuf, "COM%d", pserial->m_comNum);
-	}
-	else
-	{
-		sprintf_s(pserial->m_comBuf, "\\\\.\\COM%d", pserial->m_comNum);
-	}
-
-	if (!pserial->InitPort())
-	{
-		printf("Link Failed, Please Check the COM Number!=%s=\n", pserial->m_comBuf);
-		return false;
-	}
-	else
-	{
-		printf("%s Opened!\n", pserial->m_comBuf);
-	}
-	HANDLE hSend = CreateThread(NULL, 0, &PortSend, NULL, 0, NULL);//创建发送线程
-	int lifeSignal = 0; //心跳计时
-	while (!quitFlag)
-	{
-		if (_kbhit())
-		{
-			switch (_getch())
-			{
-			case 'q':
-				quitFlag = true;
-				break;
-			case 'w':
-				fourKey[0] = true;
-				break;
-			case 's':
-				fourKey[1] = true;
-				break;
-			case 'a':
-				fourKey[2] = true;
-				break;
-			case 'd':
-				fourKey[3] = true;
-				break;
-			default:
-				break;
-			}
-		}
-		else
-		{
-			memset(fourKey, 0, sizeof(fourKey));
-		}
-
-		Sleep(50);
-	}
-	if (hSend != NULL)
-	{
-		WaitForSingleObject(hSend, INFINITE);
-		CloseHandle(hSend);
-		hSend = NULL;
-	}
-	cout << "程序退出！" << endl;
-	Sleep(3000);
-	return 0;
-}
-
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
 // 调试程序: F5 或调试 >“开始调试”菜单
 

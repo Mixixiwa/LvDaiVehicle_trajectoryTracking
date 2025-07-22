@@ -130,10 +130,12 @@
     <ClCompile Include="LvDaiVehicle.cpp" />
     <ClCompile Include="serialPort.cpp" />
     <ClCompile Include="threadCom.cpp" />
+    <ClCompile Include="VehicleSimulator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="serialPort.h" />
     <ClInclude Include="threadCom.h" />
+    <ClInclude Include="VehicleSimulator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
