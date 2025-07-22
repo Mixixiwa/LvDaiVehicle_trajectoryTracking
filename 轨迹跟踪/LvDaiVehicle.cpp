@@ -22,33 +22,40 @@ DWORD WINAPI PortSend(LPVOID lpParameter)
 		//w按键按下：前进
 		if (fourKey[0])
 		{
+			pserial->m_aSpeedCommand = 300;
+			pserial->m_bSpeedCommand = 300;
 			pserial->SendFrontCommand();
+			Sleep(50);
 		}
 		//s键按下
 		if (fourKey[1])
 		{
+			pserial->m_aSpeedCommand = -300;
+			pserial->m_bSpeedCommand = -300;
 			pserial->SendRetreatCommand();
+			Sleep(50);
 		}
 		//a键按下
 		if (fourKey[2])
 		{
+			pserial->m_aSpeedCommand = -300;
+			pserial->m_bSpeedCommand = 300;
 			pserial->SendLeftTurnCommand();
+			Sleep(50);
 		}
 		//d键按下
 		if (fourKey[3])
 		{
+			pserial->m_aSpeedCommand = 300;
+			pserial->m_bSpeedCommand = -300;
 			pserial->SendRightTurnCommand();
-		}
-		//q健按下，退出程序
-		if (quitFlag)
-		{
-			break;
+			Sleep(50);
 		}
 		//循环发送当前转速问询指令
 		pserial->SendAskSpeedNow();
 		Sleep(50);
 	}
-	//程序推出前，发送停车指令
+	//程序退出前，发送停车指令
 	pserial->SendStopCommand();
 
 	pserial->StopThread();

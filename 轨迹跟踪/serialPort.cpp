@@ -225,7 +225,7 @@ void SERIALPORT::SendLeftTurnCommand()   //Ç°½øÊ±£¬ÊµÏÖ×ó×ª£¬A¿ÉÕý×ª¿É·´×ª£¬BÎªÕ
 		buf[10] = (b >> 8) & 0xFF;
 		buf[11] = b & 0xFF;
 		
-		if (m_aSpeedNow < 0)  //ÈôAµÄ×ªËÙÎª·´×ª,Ö±½Ó·¢ËÍÄ¿±êÖ¸Áî
+		if (m_aSpeedNow <= 0)  //ÈôAµÄ×ªËÙÎª·´×ª,Ö±½Ó·¢ËÍÄ¿±êÖ¸Áî
 		{
 			SendPortMesg(buf, 12);
 		}
@@ -299,7 +299,7 @@ void SERIALPORT::SendRightTurnCommand()//Ç°½øÊ±£¬ÊµÏÖÓÒ×ª£¬AÎªÕý×ª£¬B¿ÉÕý×ª¿É·´×
 		buf[10] = (b >> 8) & 0xFF;
 		buf[11] = b & 0xFF;
 
-		if (m_bSpeedNow < 0)  //ÈôBµÄ×ªËÙÎª·´×ª,Ö±½Ó·¢ËÍÄ¿±êÖ¸Áî
+		if (m_bSpeedNow <= 0)  //ÈôBµÄ×ªËÙÎª·´×ª,Ö±½Ó·¢ËÍÄ¿±êÖ¸Áî
 		{
 			SendPortMesg(buf, 12);
 		}
