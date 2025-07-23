@@ -135,26 +135,152 @@
 //}
 
 
+//int main()     //测试履带车模型
+//{
+//    VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
+//    std::ofstream fout("VehicleSimulator.csv");
+//
+//    double dt = 0.01;
+//
+//    for (int i = 0; i < 1000; ++i) {
+//        double vL = 0.5; // m/s
+//        double vR = 1.0; // m/s
+//        sim.step(vL, vR, dt);
+//
+//        const auto& s = sim.getState();
+//        fout << s.x << "," << s.y << "," << s.psi << "\n";
+//    }
+//
+//    fout.close();
+//    std::cout << "Simulation complete.\n";
+//    return 0;
+//}
+
+//使用PID进行轨迹跟踪
+#include "PIDController.h"
+#include <vector>
+#include <cmath>
+#include <sstream>
+#include <string>
+#include <utility>
+#include"path_heading_kappa.h"
+#include "ProjectionMatcher.h"
+
+
+#define M_PI 3.14159265358979323846
+
+
+double normalizeAngle(double angle) {
+    while (angle > M_PI) angle -= 2 * M_PI;
+    while (angle < -M_PI) angle += 2 * M_PI;
+    return angle;
+}
+
+// 计算最近路径点索引
+int findClosestPointIndex(const VehicleState& state, const std::vector<std::pair<double, double>>& path) {
+    int closest_idx = 0;
+    double min_dist = 1e9;
+    for (int i = 0; i < path.size(); ++i) {
+        double dx = path[i].first - state.x;
+        double dy = path[i].second - state.y;
+        double dist = dx * dx + dy * dy;
+        
+        if (dist < min_dist) {
+            min_dist = dist;
+            closest_idx = i;
+        }
+    }
+    return closest_idx;
+}
 int main()     //测试履带车模型
 {
-    VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
-    std::ofstream fout("VehicleSimulator.csv");
-
-    double dt = 0.01;
-
-    for (int i = 0; i < 1000; ++i) {
-        double vL = 0.5; // m/s
-        double vR = 1.0; // m/s
-        sim.step(vL, vR, dt);
-
-        const auto& s = sim.getState();
-        fout << s.x << "," << s.y << "," << s.psi << "\n";
+    //获取目标路径
+    std::ifstream file("path.csv");
+    if (!file.is_open()) {
+        std::cerr << "无法打开文件 path.csv" << std::endl;
+        return 1;
     }
 
-    fout.close();
+    std::vector<std::pair<double, double>> path;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::string x_str, y_str;
+
+        if (std::getline(ss, x_str, ',') && std::getline(ss, y_str)) {
+            double x = std::stod(x_str);
+            double y = std::stod(y_str);
+            path.emplace_back(x, y);
+        }
+    }
+    file.close();
+
+    std::vector<double> path_x;
+    std::vector<double> path_y;
+    size_t N = path.size();
+    path_x.resize(N);
+    path_y.resize(N);
+
+    for (size_t i = 0; i < N; ++i) {
+        path_x[i] = path[i].first;
+        path_y[i] = path[i].second;
+    }
+
+    //计算目标路径的航向角和曲率
+    std::vector<double> heading, kappa;
+    computePathHeadingAndKappa(path, heading, kappa);
+
+    //计算投影点的匹配点的编号，投影点点的坐标，航向角，曲率
+    ProjectionMatcher matcher;
+
+    ProjectionResult res = matcher.matchProjection(x_set, y_set, path_x, path_y, heading, kappa);
+
+    VehicleSimulator sim(0.5); // 履带间距 b = 0.6m
+    double v_desired = 0.5;  // 前进线速度
+    PIDController heading_pid(1.2, 0, 0.1); // 角度 PID 控制器
+    std::ofstream fout("../visualize_traj.py/PIDtrajectory_output.csv");
+
+    double dt = 0.1;
+
+    for (int i = 0; i < 9000; ++i) {
+        const auto& state = sim.getState();
+        int target_idx = findClosestPointIndex(state, path);
+        
+
+        if (target_idx >= path.size()) break;
+
+        // 目标点坐标
+        double tx = path[target_idx].first;
+        double ty = path[target_idx].second;
+
+        // 计算目标方向角
+        double dx = tx - state.x;
+        double dy = ty - state.y;
+        double psi_des = std::atan2(dy, dx);
+        double psi_err = normalizeAngle(psi_des - state.psi);
+
+        // 计算角速度命令
+        double omega_cmd = heading_pid.compute(psi_err, dt);
+
+        // 计算履带速度
+        double vL = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
+        double vR = v_desired + 0.5 * sim.getTrackWidth() * omega_cmd;
+
+        sim.step(vL, vR, dt);
+        fout << state.x << "," << state.y << "," << state.psi << "\n";
+    }
+    int ret = std::system("..\\visualize_traj.py\\visualize_traj.py.py");
+    ; // 要确保 python 命令有效
+    if (ret != 0) {
+        std::cerr << "Failed to run Python script.\n";
+    }
+
     std::cout << "Simulation complete.\n";
     return 0;
 }
+
+
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
 // 调试程序: F5 或调试 >“开始调试”菜单
 

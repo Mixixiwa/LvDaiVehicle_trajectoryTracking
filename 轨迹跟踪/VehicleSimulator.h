@@ -16,6 +16,7 @@ public:
 
     void step(double v_l, double v_r, double dt);
     const VehicleState& getState() const;
+    double getTrackWidth() const { return b; }
 
 private:
     double b; // ÂÄ´ø¼ä¾à
