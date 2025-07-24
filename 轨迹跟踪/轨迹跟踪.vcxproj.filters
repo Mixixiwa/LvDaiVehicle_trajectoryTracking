@@ -36,6 +36,9 @@
     <ClCompile Include="ProjectionMatcher.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ErrorCalculator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="serialPort.h">
@@ -54,6 +57,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ProjectionMatcher.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorCalculator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

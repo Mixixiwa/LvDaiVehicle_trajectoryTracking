@@ -165,6 +165,8 @@
 #include <utility>
 #include"path_heading_kappa.h"
 #include "ProjectionMatcher.h"
+#include "ErrorCalculator.h"
+
 
 
 #define M_PI 3.14159265358979323846
@@ -175,25 +177,16 @@ double normalizeAngle(double angle) {
     while (angle < -M_PI) angle += 2 * M_PI;
     return angle;
 }
-
-// 计算最近路径点索引
-int findClosestPointIndex(const VehicleState& state, const std::vector<std::pair<double, double>>& path) {
-    int closest_idx = 0;
-    double min_dist = 1e9;
-    for (int i = 0; i < path.size(); ++i) {
-        double dx = path[i].first - state.x;
-        double dy = path[i].second - state.y;
-        double dist = dx * dx + dy * dy;
-        
-        if (dist < min_dist) {
-            min_dist = dist;
-            closest_idx = i;
-        }
-    }
-    return closest_idx;
-}
+   
 int main()     //测试履带车模型
 {
+    VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
+    double v_desired = 0.1;  // 前进线速度
+    PIDController heading_pid(0.005, 0.0005, 0.1); // 角度 PID 控制器
+    std::ofstream fout("../visualize_traj.py/PIDtrajectory_output.csv");
+    double dt = 0.1;
+    const auto& state = sim.getState();//获取车辆状态
+
     //获取目标路径
     std::ifstream file("path.csv");
     if (!file.is_open()) {
@@ -218,13 +211,24 @@ int main()     //测试履带车模型
 
     std::vector<double> path_x;
     std::vector<double> path_y;
-    size_t N = path.size();
-    path_x.resize(N);
-    path_y.resize(N);
+    size_t N0 = path.size();
+    path_x.resize(N0);
+    path_y.resize(N0);
 
-    for (size_t i = 0; i < N; ++i) {
+    for (size_t i = 0; i < N0; ++i) {
         path_x[i] = path[i].first;
         path_y[i] = path[i].second;
+    }
+
+    std::vector<double> x_set;
+    std::vector<double> y_set;
+    size_t N1 = 1;
+    x_set.resize(N1);
+    y_set.resize(N1);
+
+    for (size_t i = 0; i < N1; ++i) {
+        x_set[i] = state.x;
+        y_set[i] = state.y;
     }
 
     //计算目标路径的航向角和曲率
@@ -233,47 +237,46 @@ int main()     //测试履带车模型
 
     //计算投影点的匹配点的编号，投影点点的坐标，航向角，曲率
     ProjectionMatcher matcher;
-
     ProjectionResult res = matcher.matchProjection(x_set, y_set, path_x, path_y, heading, kappa);
 
-    VehicleSimulator sim(0.5); // 履带间距 b = 0.6m
-    double v_desired = 0.5;  // 前进线速度
-    PIDController heading_pid(1.2, 0, 0.1); // 角度 PID 控制器
-    std::ofstream fout("../visualize_traj.py/PIDtrajectory_output.csv");
-
-    double dt = 0.1;
-
-    for (int i = 0; i < 9000; ++i) {
-        const auto& state = sim.getState();
-        int target_idx = findClosestPointIndex(state, path);
+    for (int i = 0; i < 1000; ++i) {
+        
+        int target_idx = res.match_point_index_set[0];
         
 
         if (target_idx >= path.size()) break;
 
-        // 目标点坐标
-        double tx = path[target_idx].first;
-        double ty = path[target_idx].second;
+        // 目标点坐标,航向角，曲率
+        double x_desire = path[target_idx].first;
+        double y_desire = path[target_idx].second;
+        double thetar_desire = heading[target_idx];
+        double kappar_desire = kappa[target_idx];
 
-        // 计算目标方向角
-        double dx = tx - state.x;
-        double dy = ty - state.y;
-        double psi_des = std::atan2(dy, dx);
-        double psi_err = normalizeAngle(psi_des - state.psi);
+        //预测车辆状态
+        double ts = 0.1;
+        VehicleState PredictedState = predictNextState(state, ts);
 
-        // 计算角速度命令
-        double omega_cmd = heading_pid.compute(psi_err, dt);
+        //计算误差
+        std::array<double, 4> err;  //err[0] = ed; err[1] = ed_dot； err[2] = ephi;  err[3] = ephi_dot;
+        double es = 0.0;
+        double s_dot = 0.0;
+        computeErrors(
+            PredictedState.x, PredictedState.y, PredictedState.phi,    // x, y, phi
+            PredictedState.v_x, PredictedState.v_y, PredictedState.phi_dot,    // vx, vy, phi_dot
+            x_desire, y_desire, thetar_desire,    // xr, yr, thetar
+            kappar_desire,             // kappar
+            err, es, s_dot
+        );
+
+        // 用PID，通过横向误差计算角速度命令
+        double omega_cmd = heading_pid.compute(err[0], dt);
 
         // 计算履带速度
-        double vL = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
-        double vR = v_desired + 0.5 * sim.getTrackWidth() * omega_cmd;
+        double vL = v_desired + 0.5 * sim.getTrackWidth() * omega_cmd;
+        double vR = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
 
         sim.step(vL, vR, dt);
-        fout << state.x << "," << state.y << "," << state.psi << "\n";
-    }
-    int ret = std::system("..\\visualize_traj.py\\visualize_traj.py.py");
-    ; // 要确保 python 命令有效
-    if (ret != 0) {
-        std::cerr << "Failed to run Python script.\n";
+        fout << state.x << "," << state.y << "," << state.phi << "\n";
     }
 
     std::cout << "Simulation complete.\n";

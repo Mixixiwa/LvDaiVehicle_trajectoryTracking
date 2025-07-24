@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ErrorCalculator.cpp" />
     <ClCompile Include="LvDaiVehicle.cpp" />
     <ClCompile Include="path_heading_kappa.cpp" />
     <ClCompile Include="PIDController.cpp" />
@@ -136,6 +137,7 @@
     <ClCompile Include="VehicleSimulator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ErrorCalculator.h" />
     <ClInclude Include="path_heading_kappa.h" />
     <ClInclude Include="PIDController.h" />
     <ClInclude Include="ProjectionMatcher.h" />
