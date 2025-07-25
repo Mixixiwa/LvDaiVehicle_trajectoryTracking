@@ -43,7 +43,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -127,13 +127,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\LvDaiVehicle\LvDaiVehicle.cpp" />
-    <ClCompile Include="..\..\LvDaiVehicle\serialPort.cpp" />
-    <ClCompile Include="..\..\LvDaiVehicle\threadCom.cpp" />
+    <ClCompile Include="ErrorCalculator.cpp" />
+    <ClCompile Include="LvDaiVehicle.cpp" />
+    <ClCompile Include="path_heading_kappa.cpp" />
+    <ClCompile Include="PIDController.cpp" />
+    <ClCompile Include="ProjectionMatcher.cpp" />
+    <ClCompile Include="serialPort.cpp" />
+    <ClCompile Include="threadCom.cpp" />
+    <ClCompile Include="VehicleSimulator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\LvDaiVehicle\serialPort.h" />
-    <ClInclude Include="..\..\LvDaiVehicle\threadCom.h" />
+    <ClInclude Include="ErrorCalculator.h" />
+    <ClInclude Include="path_heading_kappa.h" />
+    <ClInclude Include="PIDController.h" />
+    <ClInclude Include="ProjectionMatcher.h" />
+    <ClInclude Include="serialPort.h" />
+    <ClInclude Include="threadCom.h" />
+    <ClInclude Include="VehicleSimulator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

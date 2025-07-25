@@ -15,21 +15,51 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\LvDaiVehicle\LvDaiVehicle.cpp">
+    <ClCompile Include="LvDaiVehicle.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\LvDaiVehicle\serialPort.cpp">
+    <ClCompile Include="serialPort.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\LvDaiVehicle\threadCom.cpp">
+    <ClCompile Include="threadCom.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="VehicleSimulator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PIDController.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="path_heading_kappa.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectionMatcher.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorCalculator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\LvDaiVehicle\serialPort.h">
+    <ClInclude Include="serialPort.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\LvDaiVehicle\threadCom.h">
+    <ClInclude Include="threadCom.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="VehicleSimulator.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PIDController.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="path_heading_kappa.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectionMatcher.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ErrorCalculator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
