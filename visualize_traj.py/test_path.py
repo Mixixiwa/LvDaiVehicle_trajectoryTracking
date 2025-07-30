@@ -1,13 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import time
 
-#path = [(x, np.sin(0.5*x)*3) for x in np.linspace(0, 10, 1000)]
-path = [(x, 0.5*x) for x in np.linspace(0, 100, 10000)]
-np.savetxt("path.csv", path, delimiter=",")
-time.sleep(0.5)
-# 读取CSV数据
-data = np.loadtxt("path.csv", delimiter=",")
+data = np.loadtxt("path_output.csv", delimiter=",")
 x,y = data[:, 0], data[:, 1]
 
 
@@ -17,10 +11,12 @@ plt.figure(figsize=(8, 6))
 plt.plot(x,y, 'r--', label='Target Path')
 
 plt.scatter(x[0], y[0], c='green', marker='o', label='Start')
+plt.xlim(0, 200)      # 横坐标从 0 到 500
+plt.ylim(-5, 5)     # 纵坐标从 -5 到 5
 plt.xlabel("X Position (m)")
 plt.ylabel("Y Position (m)")
 plt.title("Tracked Path vs Target Path")
-plt.axis("equal")
+#plt.axis("equal")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

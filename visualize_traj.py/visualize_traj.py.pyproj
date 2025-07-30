@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>visualize_traj.py</Name>
     <RootNamespace>visualize_traj.py</RootNamespace>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +22,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="err_output.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MatchPoint.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="path_heading_kappa_output.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="test_path.py" />
     <Compile Include="VehiclePath.py" />
     <Compile Include="visualize_traj.py.py" />
   </ItemGroup>

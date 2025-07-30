@@ -7,15 +7,15 @@
 #include "VehicleSimulator.h"
 #include <fstream>
 
-//SERIALPORT serialPort;
-//SERIALPORT* pserial = &serialPort;
-//
-////按下q程序退出
-//bool quitFlag = false;
-////W S A D按键
-//bool fourKey[4] = {'W','S','A','D'};
-//
-//DWORD WINAPI PortSend(LPVOID lpParameter)
+SERIALPORT serialPort;
+SERIALPORT* pserial = &serialPort;
+
+//按下q程序退出
+bool quitFlag = false;
+//W S A D按键
+//bool fourKey[4] = {};
+
+////DWORD WINAPI PortSend(LPVOID lpParameter)
 //{
 //	pserial->StartThread();
 //	while (!quitFlag)
@@ -54,22 +54,21 @@
 //			Sleep(50);
 //		}
 //		//循环发送当前转速问询指令
-//		pserial->SendAskSpeedNow();
+//		/*pserial->SendAskSpeedNow();*/
 //		Sleep(50);
 //	}
 //	//程序退出前，发送停车指令
 //	pserial->SendStopCommand();
-//
 //	pserial->StopThread();
 //	Sleep(10);
 //	cout << "发送线程已关闭" << endl;
 //	return 0;
 //}
-
+//
 //int main()
 //{
 //	//串口号
-//	pserial->m_comNum = 2;
+//	pserial->m_comNum = 3;
 //	memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
 //	if (pserial->m_comNum < 10)
 //	{
@@ -167,90 +166,98 @@
 #include "ProjectionMatcher.h"
 #include "ErrorCalculator.h"
 
-
-
-#define M_PI 3.14159265358979323846
-
-
-double normalizeAngle(double angle) {
-    while (angle > M_PI) angle -= 2 * M_PI;
-    while (angle < -M_PI) angle += 2 * M_PI;
-    return angle;
-}
-   
-int main()     //测试履带车模型
+//测试履带车模型
+int main()     
 {
-    VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
-    double v_desired = 0.1;  // 前进线速度
-    PIDController heading_pid(0.005, 0.0005, 0.1); // 角度 PID 控制器
-    std::ofstream fout("../visualize_traj.py/PIDtrajectory_output.csv");
-    double dt = 0.1;
-    const auto& state = sim.getState();//获取车辆状态
+    //设置车辆参数和PID参数
+    
+     VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
+     double v_desired = 0.5;  // 前进线速度
+     PIDController heading_pid(2, 0.05, 0); // 角度 PID 控制器
+     double dt = 0.1;
+     const auto& state = sim.getState();//获取车辆状态
+      
+     std::ofstream file1("../visualize_traj.py/PIDtrajectory_output.csv");
+     std::ifstream file("../visualize_traj.py/Double_lane.csv");
+     std::ofstream file2("../visualize_traj.py/path_output.csv");
+     std::ofstream file3("../visualize_traj.py/err_output.csv");
+     std::ofstream file4("../visualize_traj.py/path_heading_kappa_output.csv");
+     std::ofstream file5("../visualize_traj.py/MatchPoint_index_heading_kappa_output.csv");
+ 
+     //获取目标路径
+     if (!file.is_open()) {
+            std::cerr << "无法打开文件 Double_lane.csv" << std::endl;
+            return 1;
+        }
 
-    //获取目标路径
-    std::ifstream file("path.csv");
-    if (!file.is_open()) {
-        std::cerr << "无法打开文件 path.csv" << std::endl;
-        return 1;
-    }
+     std::vector<std::pair<double, double>> path;
+     std::string line;
 
-    std::vector<std::pair<double, double>> path;
-    std::string line;
-
-    while (std::getline(file, line)) {
+     while (std::getline(file, line)) 
+     {
         std::stringstream ss(line);
         std::string x_str, y_str;
 
-        if (std::getline(ss, x_str, ',') && std::getline(ss, y_str)) {
+        if (std::getline(ss, x_str, ',') && std::getline(ss, y_str)) 
+        {
             double x = std::stod(x_str);
             double y = std::stod(y_str);
             path.emplace_back(x, y);
+            file2 << x << "," << y << "\n";
         }
-    }
-    file.close();
+     }
 
+     //目标路径
     std::vector<double> path_x;
     std::vector<double> path_y;
     size_t N0 = path.size();
     path_x.resize(N0);
     path_y.resize(N0);
 
-    for (size_t i = 0; i < N0; ++i) {
+    for (size_t i = 0; i < N0; ++i) 
+    {
         path_x[i] = path[i].first;
         path_y[i] = path[i].second;
-    }
-
-    std::vector<double> x_set;
-    std::vector<double> y_set;
-    size_t N1 = 1;
-    x_set.resize(N1);
-    y_set.resize(N1);
-
-    for (size_t i = 0; i < N1; ++i) {
-        x_set[i] = state.x;
-        y_set[i] = state.y;
     }
 
     //计算目标路径的航向角和曲率
     std::vector<double> heading, kappa;
     computePathHeadingAndKappa(path, heading, kappa);
+    
+    for (size_t i = 0; i < N0; ++i) {
+        file4 << path_x[i] << "," << path_y[i] << "," << heading[i] << "," << kappa[i] << "\n";
+    }
 
-    //计算投影点的匹配点的编号，投影点点的坐标，航向角，曲率
-    ProjectionMatcher matcher;
-    ProjectionResult res = matcher.matchProjection(x_set, y_set, path_x, path_y, heading, kappa);
-
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 5000; ++i) 
+    {
         
+        //车辆位置
+        std::vector<double> x_set;
+        std::vector<double> y_set;
+        size_t N1 = 1;
+        x_set.resize(N1);
+        y_set.resize(N1);
+
+        for (size_t i = 0; i < N1; ++i) {
+            x_set[i] = state.x;
+            y_set[i] = state.y;
+        }
+
+        //计算投影点的匹配点的编号，投影点点的坐标，航向角，曲率
+        ProjectionMatcher matcher;
+        ProjectionResult res = matcher.matchProjection(x_set, y_set, path_x, path_y, heading, kappa);
+
         int target_idx = res.match_point_index_set[0];
         
-
         if (target_idx >= path.size()) break;
 
-        // 目标点坐标,航向角，曲率
+        // 匹配点坐标,航向角，曲率
         double x_desire = path[target_idx].first;
         double y_desire = path[target_idx].second;
         double thetar_desire = heading[target_idx];
         double kappar_desire = kappa[target_idx];
+
+        file5 << i * 0.1 << "," << target_idx << "," << x_desire << "," << thetar_desire << "," << kappar_desire << "\n";
 
         //预测车辆状态
         double ts = 0.1;
@@ -267,6 +274,8 @@ int main()     //测试履带车模型
             kappar_desire,             // kappar
             err, es, s_dot
         );
+        file3 << i * 0.1 << "," << err[0]<<","<<err[1]<<","<<err[2]<<","<<err[3] << "\n";
+
 
         // 用PID，通过横向误差计算角速度命令
         double omega_cmd = heading_pid.compute(err[0], dt);
@@ -276,9 +285,14 @@ int main()     //测试履带车模型
         double vR = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
 
         sim.step(vL, vR, dt);
-        fout << state.x << "," << state.y << "," << state.phi << "\n";
+        file1 << state.x << "," << state.y << "," << state.phi << "\n";
     }
-
+    file.close();
+    file1.close();
+    file2.close();
+    file3.close();
+    file4.close();
+    file5.close();
     std::cout << "Simulation complete.\n";
     return 0;
 }

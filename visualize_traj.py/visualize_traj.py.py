@@ -6,7 +6,7 @@ import numpy as np
 # ¶ÁÈ¡CSVÊý¾Ý
 data1 = np.loadtxt("PIDtrajectory_output.csv", delimiter=",")
 vehicle_x,vehicle_y = data1[:, 0], data1[:, 1]
-data2 = np.loadtxt("path.csv", delimiter=",")
+data2 = np.loadtxt("Double_lane.csv", delimiter=",")
 target_x, target_y= data2[:, 0], data2[:, 1]
 
 # »­Í¼
