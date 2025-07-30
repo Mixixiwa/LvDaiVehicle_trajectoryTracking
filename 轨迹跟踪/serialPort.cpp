@@ -341,10 +341,10 @@ void SERIALPORT::Run()
 			//处理接收数据
 			for (int i = 0;i < dwRead - 1;i++)
 			{
-				if (recvTemp[i] == 0xED && recvTemp[i + 1] == 0x02)
+				if (recvTemp[i] == 0xEE )
 				{
-					short a = (recvTemp[i + 2] << 8) | recvTemp[i + 3];
-					short b = (recvTemp[i + 4] << 8) | recvTemp[i + 5];
+					short a = (recvTemp[i + 1] << 8) | recvTemp[i + 2];
+					short b = (recvTemp[i + 3] << 8) | recvTemp[i + 4];
 					if (a > 32768)//负数
 					{
 						a = a - 65535;

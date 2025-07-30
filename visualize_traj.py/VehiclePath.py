@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import time
 
-path = [(x, np.sin(0.5*x)*3) for x in np.linspace(0, 10, 1000)]
+#path = [(x, np.sin(0.5*x)*3) for x in np.linspace(0, 10, 1000)]
+path = [(x, 0.5*x) for x in np.linspace(0, 100, 10000)]
 np.savetxt("path.csv", path, delimiter=",")
 time.sleep(0.5)
 # ¶ÁÈ¡CSVÊý¾Ý
