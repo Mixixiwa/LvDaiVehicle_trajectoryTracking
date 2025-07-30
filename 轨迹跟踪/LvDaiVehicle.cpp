@@ -133,28 +133,6 @@ bool quitFlag = false;
 //	return 0;
 //}
 
-
-//int main()     //测试履带车模型
-//{
-//    VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
-//    std::ofstream fout("VehicleSimulator.csv");
-//
-//    double dt = 0.01;
-//
-//    for (int i = 0; i < 1000; ++i) {
-//        double vL = 0.5; // m/s
-//        double vR = 1.0; // m/s
-//        sim.step(vL, vR, dt);
-//
-//        const auto& s = sim.getState();
-//        fout << s.x << "," << s.y << "," << s.psi << "\n";
-//    }
-//
-//    fout.close();
-//    std::cout << "Simulation complete.\n";
-//    return 0;
-//}
-
 //使用PID进行轨迹跟踪
 #include "PIDController.h"
 #include <vector>
@@ -177,8 +155,8 @@ int main()
      double dt = 0.1;
      const auto& state = sim.getState();//获取车辆状态
       
+     std::ifstream file("../visualize_traj.py/Double_lane.csv");   //提取目标轨迹的文件
      std::ofstream file1("../visualize_traj.py/PIDtrajectory_output.csv");
-     std::ifstream file("../visualize_traj.py/Double_lane.csv");
      std::ofstream file2("../visualize_traj.py/path_output.csv");
      std::ofstream file3("../visualize_traj.py/err_output.csv");
      std::ofstream file4("../visualize_traj.py/path_heading_kappa_output.csv");
@@ -227,6 +205,8 @@ int main()
     for (size_t i = 0; i < N0; ++i) {
         file4 << path_x[i] << "," << path_y[i] << "," << heading[i] << "," << kappa[i] << "\n";
     }
+
+    //开始轨迹跟踪仿真，仿真时间5000*0.1=500（s）
 
     for (int i = 0; i < 5000; ++i) 
     {
