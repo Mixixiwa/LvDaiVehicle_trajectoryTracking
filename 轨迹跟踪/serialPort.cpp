@@ -311,6 +311,214 @@ void SERIALPORT::SendRightTurnCommand()//Ç°½øÊ±£¬ÊµÏÖÓÒ×ª£¬AÎªÕı×ª£¬B¿ÉÕı×ª¿É·´×
 	}
 }
 
+void SERIALPORT::SendControlCommand()
+{
+    std::cout << "[´®¿Ú·¢ËÍ] ×óÂÖRPM: " << m_aSpeedCommand
+        << " ÓÒÂÖRPM: " << m_bSpeedCommand << std::endl;
+    //ÄæÊ±ÕëÎªÕı×ª£¬Ë³Ê±ÕëÎª·´×ª
+    //Aµç»úÎª×óµç»ú
+    int a = m_aSpeedCommand / 0.3;
+    //Bµç»úÎªÓÒµç»ú
+    int b = m_bSpeedCommand / 0.3;
+    
+    BYTE bufA0[50], bufB0[50],buf[50];
+    memset(bufA0, 0, sizeof(bufA0));
+    memset(bufB0, 0, sizeof(bufB0));
+    memset(buf, 0, sizeof(bufB0));
+    //Aµç»ú0×ªËÙÖ¸Áî
+    bufA0[0] = 0xE0;
+    bufA0[1] = 0x01;
+    bufA0[2] = 0;
+    bufA0[3] = 0;
+    bufA0[4] = 0;
+    bufA0[5] = 0;
+    bufA0[6] = 0;
+    bufA0[7] = 0;
+    bufA0[8] = 0;
+    bufA0[9] = 0;
+    bufA0[10] = 0;
+    bufA0[11] = 0;
+
+    //Bµç»ú0×ªËÙÖ¸Áî
+    bufB0[0] = 0xE0;
+    bufB0[1] = 0x02;
+    bufB0[2] = 0;
+    bufB0[3] = 0;
+    bufB0[4] = 0;
+    bufB0[5] = 0;
+    bufB0[6] = 0;
+    bufB0[7] = 0;
+    bufB0[8] = 0;
+    bufB0[9] = 0;
+    bufB0[10] = 0;
+    bufB0[11] = 0;
+
+    if (a >= 0 && b >= 0)  //ÅĞ¶ÏA£¬B×ªËÙÊÇ·ñ´óÓÚÁã
+    {
+        buf[0] = 0xE0;
+        buf[1] = 0x03;
+        buf[2] = 0;
+        buf[3] = 0;
+        buf[4] = 0;
+        buf[5] = 0;
+        buf[6] = (a >> 8) & 0xFF;
+        buf[7] = a & 0xFF;
+        buf[8] = 0;
+        buf[9] = 0;
+        buf[10] = (b >> 8) & 0xFF;
+        buf[11] = b & 0xFF;
+        //ÅĞ¶ÏAµç»úÖ¸Áî×ªÏòÓëµ±Ç°Aµç»ú×ªÏòÊÇ·ñÏàÍ¬
+        if (sgn(a) == sgn(m_aSpeedNow))  //Aµç»úÏàÍ¬×ªÏò£¬Ö»ĞèÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+        else                               //Aµç»ú²»Í¬×ªÏò£¬ÏÈ·¢ËÍAµç»ú0×ªËÙÖ¸Áî£¬ÔÙÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            SendPortMesg(bufA0, 12);
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+    }
+    else if (a < 0)
+    {
+        buf[0] = 0xE0;
+        buf[1] = 0x03;
+        buf[2] = 0;
+        buf[3] = 0;
+        buf[4] = 0xFF;
+        buf[5] = 0xFF;
+        buf[6] = (a >> 8) & 0xFF;
+        buf[7] = a & 0xFF;
+        buf[8] = 0;
+        buf[9] = 0;
+        buf[10] = (b >> 8) & 0xFF;
+        buf[11] = b & 0xFF;
+        //ÅĞ¶ÏAµç»úÖ¸Áî×ªÏòÓëµ±Ç°Aµç»ú×ªÏòÊÇ·ñÏàÍ¬
+        if (sgn(a) == sgn(m_aSpeedNow))  //Aµç»úÏàÍ¬×ªÏò£¬Ö»ĞèÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+        else                               //Aµç»ú²»Í¬×ªÏò£¬ÏÈ·¢ËÍAµç»ú0×ªËÙÖ¸Áî£¬ÔÙÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            SendPortMesg(bufA0, 12);
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+    }
+    else if (b < 0)
+    {
+        buf[0] = 0xE0;
+        buf[1] = 0x03;
+        buf[2] = 0;
+        buf[3] = 0;
+        buf[4] = 0;
+        buf[5] = 0;
+        buf[6] = (a >> 8) & 0xFF;
+        buf[7] = a & 0xFF;
+        buf[8] = 0xFF;
+        buf[9] = 0xFF;
+        buf[10] = (b >> 8) & 0xFF;
+        buf[11] = b & 0xFF;
+        //ÅĞ¶ÏAµç»úÖ¸Áî×ªÏòÓëµ±Ç°Aµç»ú×ªÏòÊÇ·ñÏàÍ¬
+        if (sgn(a) == sgn(m_aSpeedNow))  //Aµç»úÏàÍ¬×ªÏò£¬Ö»ĞèÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+        else                               //Aµç»ú²»Í¬×ªÏò£¬ÏÈ·¢ËÍAµç»ú0×ªËÙÖ¸Áî£¬ÔÙÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            SendPortMesg(bufA0, 12);
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+    }
+    else
+    {
+        buf[0] = 0xE0;
+        buf[1] = 0x03;
+        buf[2] = 0;
+        buf[3] = 0;
+        buf[4] = 0xFF;
+        buf[5] = 0xFF;
+        buf[6] = (a >> 8) & 0xFF;
+        buf[7] = a & 0xFF;
+        buf[8] = 0xFF;
+        buf[9] = 0xFF;
+        buf[10] = (b >> 8) & 0xFF;
+        buf[11] = b & 0xFF;
+        //ÅĞ¶ÏAµç»úÖ¸Áî×ªÏòÓëµ±Ç°Aµç»ú×ªÏòÊÇ·ñÏàÍ¬
+        if (sgn(a) == sgn(m_aSpeedNow))  //Aµç»úÏàÍ¬×ªÏò£¬Ö»ĞèÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+        else                               //Aµç»ú²»Í¬×ªÏò£¬ÏÈ·¢ËÍAµç»ú0×ªËÙÖ¸Áî£¬ÔÙÅĞ¶ÏBÊÇ·ñĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+        {
+            SendPortMesg(bufA0, 12);
+            if (sgn(b) == sgn(m_bSpeedNow))  //Bµç»ú×ªËÙÏàÍ¬£¬²»ĞèÒª·¢ËÍ0×ªËÙÖ¸Áî
+            {
+                SendPortMesg(buf, 12);
+            }
+            else                            //Bµç»ú×ªËÙ²»ÏàÍ¬£¬ĞèÒªÏÈ·¢ËÍ0×ªËÙÖ¸Áî£¬ÔÚ·¢ËÍÄ¿±êÖ¸Áî
+            {
+                SendPortMesg(bufB0, 12);
+                SendPortMesg(buf, 12);
+            }
+        }
+    }
+}
+
 void SERIALPORT::Run()
 {
 	Sleep(10);

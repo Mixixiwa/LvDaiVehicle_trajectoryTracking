@@ -1,5 +1,14 @@
 #pragma once
 #include "threadCom.h"
+#include<iostream>
+
+template <typename T>
+int sgn(T val) {
+    if (val >= 0) return 1;
+    if (val < 0) return -1;
+
+}
+
 class SERIALPORT : public THREADCOM
 {
 public:
@@ -39,6 +48,9 @@ public:
 	void SendLeftTurnCommand();
 	//右转指令
 	void SendRightTurnCommand();
+    //无人驾驶速度指令
+    void SendControlCommand();
+
 
 private:
 	//处理接收数据
