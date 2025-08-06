@@ -19,7 +19,7 @@ plt.plot(x, y4, 'k-', label='ephi_dot output')
 
 # 设置横轴和纵轴的范围
 plt.xlim(0, 500)      # 横坐标从 0 到 500
-plt.ylim(-10, 10)     # 纵坐标从 0 到 100
+plt.ylim(-5, 5)     # 纵坐标从 -5 到 5
 plt.xlabel("X Time (s)")
 plt.ylabel("Y err (m)")
 plt.title("err_output")

@@ -12,7 +12,7 @@ plt.plot(x,y, 'r--', label='Target Path')
 
 plt.scatter(x[0], y[0], c='green', marker='o', label='Start')
 plt.xlim(0, 200)      # 横坐标从 0 到 500
-plt.ylim(-5, 5)     # 纵坐标从 -5 到 5
+plt.ylim(-2, 5)     # 纵坐标从 -2 到 5
 plt.xlabel("X Position (m)")
 plt.ylabel("Y Position (m)")
 plt.title("Tracked Path vs Target Path")
