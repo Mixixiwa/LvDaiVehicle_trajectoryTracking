@@ -39,6 +39,9 @@
     <ClCompile Include="ErrorCalculator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="GPS_serial.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="serialPort.h">
@@ -60,6 +63,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="ErrorCalculator.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GPS_serial.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

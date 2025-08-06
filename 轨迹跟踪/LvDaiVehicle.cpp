@@ -16,6 +16,7 @@
 #include"path_heading_kappa.h"
 #include "ProjectionMatcher.h"
 #include "ErrorCalculator.h"
+#include"GPS_serial.h"
 
 SERIALPORT serialPort;
 SERIALPORT* pserial = &serialPort;
@@ -51,7 +52,7 @@ DWORD WINAPI PortSend(LPVOID lpParameter)
 //测试履带车模型
 int main()     
 {
-    //串口号
+    //控制器串口号
     pserial->m_comNum = 1;
     memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
     if (pserial->m_comNum < 10)
@@ -73,6 +74,16 @@ int main()
         printf("%s Opened!\n", pserial->m_comBuf);
     }
 
+    //GPS串口
+    /*
+    SerialPort serial("COM1", CBR_115200);  // 修改为你的串口号
+    if (!serial.open()) {
+        std::cerr << "Failed to open serial port.\n";
+        return 1;
+    }
+    std::cout << "Reading GPS data...\n";
+    */
+
     //创建传递参数的指针变量
     TrackerOutput* trackerOutput = new TrackerOutput;
     trackerOutput->v_left = 0;
@@ -85,7 +96,7 @@ int main()
      double v_desired = 0.5;  // 前进线速度
      PIDController heading_pid(2, 0.05, 0); // 角度 PID 控制器
      double dt = 0.1;
-     const auto& state = sim.getState();//获取车辆状态
+     auto& state = sim.getState();//获取车辆状态
       
      std::ifstream file("../visualize_traj.py/Double_lane.csv");   //提取目标轨迹的文件
      std::ofstream file1("../visualize_traj.py/PIDtrajectory_output.csv");
@@ -141,8 +152,21 @@ int main()
     //开始轨迹跟踪仿真，仿真时间5000*0.1=500（s）
    for (int i = 0; i < 5000; ++i) 
     {
-        
-        //车辆位置
+        //从GPS串口中更新车辆信息
+       /*std::string line = serial.readLine();
+       auto gpsDataOpt = KSXTParser::parse(line);
+       if (gpsDataOpt) {
+           const auto& gps = gpsDataOpt.value();
+           std::cout << std::fixed << std::setprecision(8) << "Time: " << gps.timestamp
+               << " | Lon: " << gps.longitude
+               << " | Lat: " << gps.latitude
+               << " | X: " << KSXTParser::GPS_X
+               << " | Y: " << KSXTParser::GPS_Y
+               << " | Heading: " << gps.heading
+               << '\n';
+       }*/
+
+       //车辆信息
         std::vector<double> x_set;
         std::vector<double> y_set;
         size_t N1 = 1;

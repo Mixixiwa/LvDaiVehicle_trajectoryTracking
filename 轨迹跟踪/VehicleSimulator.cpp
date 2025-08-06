@@ -17,7 +17,7 @@ void VehicleSimulator::step(double v_l, double v_r, double dt) {
     state.phi += omega * dt;
 }
 
-const VehicleState& VehicleSimulator::getState() const {
+VehicleState& VehicleSimulator::getState() {
     return state;
 }
 

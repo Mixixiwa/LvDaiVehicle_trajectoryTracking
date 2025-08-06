@@ -1,7 +1,7 @@
 #pragma once
 
 struct VehicleState 
-{
+{//大地坐标下的参数
     double x = 0.0;      // 位置x
     double y = 0.0;      // 位置y
     double phi = 0.0;    // 航向角(弧度)
@@ -16,7 +16,7 @@ public:
     VehicleSimulator(double track_width);
 
     void step(double v_l, double v_r, double dt);
-    const VehicleState& getState() const;
+    VehicleState& getState() ;
     double getTrackWidth() const { return b; }
 
 private:
