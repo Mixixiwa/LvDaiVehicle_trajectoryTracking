@@ -1,7 +1,8 @@
 #pragma once
 #include <windows.h>
 #include <string>
-#include <string>
+#include <queue>
+#include <mutex>
 #include <optional>
 
 
@@ -22,10 +23,14 @@ private:
 
 struct GPSData {
     std::string timestamp;
-    double longitude;  //经度 度
-    double latitude;   //维度  度
-    double alt;  //高度，米
-    double heading;    ////地面航向，从北向起顺时针计算  0~360°
+    double Longitude;  //经度 度  小数点后八位
+    double Latitude;   //维度  度  小数点后八位
+    double Alt;  //高度，米  小数点后四位
+    double Heading;    ////地面航向，从北向起顺时针计算  0~360°  小数点后两位
+    double Pitch;  //俯仰角  -90°~90° 小数点后两位
+    double Track; //速度角 度
+    double Vel;  //速度  单位：米/秒
+    double Roll; //横滚角 度
 
     //double East;       // 以基站为坐标原点的地理坐标系下，东向位置，单位米
     //double North;        // 以基站为坐标原点的地理坐标系下，北向位置，单位米
@@ -39,4 +44,6 @@ public:
     static double GPS_X;  //East
     static double GPS_Y;  //North
     static double GPS_Z;  //Up
+    static double GPS_V;
+    static double GPS_PHI;
 };

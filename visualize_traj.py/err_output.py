@@ -13,13 +13,13 @@ y4 = data[:,4]
 plt.figure(figsize=(8, 6))
 # 绘制目标轨迹
 plt.plot(x,y1, 'r-', label='ed output')
-plt.plot(x, y2, 'b-', label='ed_dot output')   # 第二条蓝色实线
+#plt.plot(x, y2, 'b-', label='ed_dot output')   # 第二条蓝色实线
 plt.plot(x, y3, 'g-', label='ephi output')
-plt.plot(x, y4, 'k-', label='ephi_dot output')
+#plt.plot(x, y4, 'k-', label='ephi_dot output')
 
 # 设置横轴和纵轴的范围
-plt.xlim(0, 500)      # 横坐标从 0 到 500
-plt.ylim(-5, 5)     # 纵坐标从 -5 到 5
+plt.xlim(0, 20)      # 横坐标从 0 到 500
+plt.ylim(-0.5, 0.5)     # 纵坐标从 -5 到 5
 plt.xlabel("X Time (s)")
 plt.ylabel("Y err (m)")
 plt.title("err_output")

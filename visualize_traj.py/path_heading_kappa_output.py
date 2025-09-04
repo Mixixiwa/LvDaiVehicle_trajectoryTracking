@@ -17,7 +17,7 @@ plt.plot(x, y3, 'g-', label='path_kappa')
 
 # 设置横轴和纵轴的范围
 plt.xlim(0, 200)      # 横坐标从 0 到 200
-plt.ylim(-5, 10)     # 纵坐标从 0 到 100
+plt.ylim(-2, 4)     # 纵坐标从 0 到 100
 plt.xlabel("X Position(m)")
 plt.ylabel("Y (m)")
 plt.title("path_heading_kappa_output")

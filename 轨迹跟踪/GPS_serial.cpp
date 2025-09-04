@@ -148,6 +148,8 @@ std::optional<GPSData> base_point;
 double KSXTParser::GPS_X = 0.0;
 double KSXTParser::GPS_Y = 0.0;
 double KSXTParser::GPS_Z = 0.0;
+double KSXTParser::GPS_V = 0.0;
+double KSXTParser::GPS_PHI = 0.0;
 std::optional<GPSData> KSXTParser::parse(const std::string& line) {
     if (line.rfind("$KSXT", 0) != 0) return std::nullopt;
 
@@ -160,11 +162,14 @@ std::optional<GPSData> KSXTParser::parse(const std::string& line) {
     try {
         GPSData data;
         data.timestamp = tokens[1];
-        data.longitude = std::round(std::stod(tokens[2]) * 1e8) / 1e8;  //将一个浮点数保留 小数点后八位，并赋值给变量
-        data.latitude = std::round(std::stod(tokens[3]) * 1e8) / 1e8;
-        data.alt = std::round(std::stod(tokens[3]) * 1e8) / 1e4;
-        data.heading = std::round(std::stod(tokens[3]) * 1e8) / 1e2;
-
+        data.Longitude = std::round(std::stod(tokens[2]) * 1e8) / 1e8;  //将一个浮点数保留 小数点后八位，并赋值给变量
+        data.Latitude = std::round(std::stod(tokens[3]) * 1e8) / 1e8;
+        data.Alt = std::round(std::stod(tokens[4]) * 1e4) / 1e4;
+        data.Heading = std::round(std::stod(tokens[5]) * 1e2) / 1e2;
+        data.Pitch = std::round(std::stod(tokens[6]) * 1e2) / 1e2;
+        data.Track = std::round(std::stod(tokens[7]) * 1e2) / 1e2;
+        data.Vel = std::round(std::stod(tokens[8]) * 1e3) / 1e3;
+        data.Roll = std::round(std::stod(tokens[9]) * 1e2) / 1e2;
 
         // 处理最后一个字段，提取数值和校验和
         /*size_t pos = tokens[21].find('*');
@@ -179,25 +184,27 @@ std::optional<GPSData> KSXTParser::parse(const std::string& line) {
 
         //将GPS经纬度转化为坐标
         // 当前 GPS 坐标
-        double lon = data.longitude;  // 经度
-        double lat = data.latitude;   // 纬度
-        double alt = data.alt;       // 高度
+        double lon = data.Longitude;  // 经度
+        double lat = data.Latitude;   // 纬度
+        double alt = data.Alt;       // 高度
 
         // 基准点（如起点或地图中心）
 
         if (!base_point.has_value())
         {
             base_point = data;  // 保存第一次接收到的 GPS 数据
-            std::cout << std::fixed << std::setprecision(8) << "保存基准点: 经度=" << base_point->longitude
-                << ", 纬度=" << base_point->latitude << std::endl;
+            std::cout << std::fixed << std::setprecision(8) << "保存基准点: 经度=" << base_point->Longitude
+                << ", 纬度=" << base_point->Latitude << std::endl;
         }
 
         double east, north, up;
-        lla_to_enu(data.latitude, data.longitude, data.alt, base_point->latitude, base_point->longitude, base_point->alt, east, north, up);
+        lla_to_enu(data.Latitude, data.Longitude, data.Alt, base_point->Latitude, base_point->Longitude, base_point->Alt, east, north, up);
 
         GPS_X = east;
         GPS_Y = north;
         GPS_Z = up;
+        GPS_V= data.Vel;
+        GPS_PHI= data.Heading;
 
         return data;
     }

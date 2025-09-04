@@ -3,29 +3,29 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# ¶ÁÈ¡CSVÊý¾Ý
+# ??È¡CSV????
 data1 = np.loadtxt("PIDtrajectory_output.csv", delimiter=",")
 vehicle_x,vehicle_y = data1[:, 0], data1[:, 1]
-data2 = np.loadtxt("Double_lane.csv", delimiter=",")
+data2 = np.loadtxt("path.csv", delimiter=",")
 target_x, target_y= data2[:, 0], data2[:, 1]
 
-# »­Í¼
+# ??Í¼
 plt.figure(figsize=(8, 6))
-# »æÖÆÄ¿±ê¹ì¼£
+# ????Ä¿??ì¼£
 plt.plot(target_x, target_y, 'r--', label='Target Path')
 
-# »æÖÆ³µÁ¾¹ì¼£
+# ???Æ³????ì¼£
 plt.plot(vehicle_x, vehicle_y, 'b-', label='Vehicle Path')
-# ±ê¼ÇÆðµãºÍÖÕµã
+# ????????Õµ?
 plt.scatter(target_x[0], target_y[0], c='green', marker='o', label='Start')
 plt.scatter(target_x[-1], target_y[-1], c='red', marker='x', label='Goal')
 
-plt.xlim(0, 200)      # ºá×ø±ê´Ó 0 µ½ 200
-plt.ylim(-5, 10)     # ×Ý×ø±ê´Ó -5 µ½ 10
+plt.xlim(0, 10)      # ??????? 0 ?? 200
+plt.ylim(-1, 2)     # ??????? -5 ?? 10
 plt.xlabel("X Position (m)")
 plt.ylabel("Y Position (m)")
 plt.title("Tracked Path vs Target Path")
-#plt.axis("equal")  »­µÄÊÇ¶þÎ¬¹ì¼££¨·ÇÊ±¼äÐòÁÐ£©£¬½¨Òé¹Ø±Õ axis("equal")
+#plt.axis("equal")  ?????Ç¶?Î¬?ì¼£????Ê±?????Ð£???????Ø±? axis("equal")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

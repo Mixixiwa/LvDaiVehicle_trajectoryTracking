@@ -31,6 +31,9 @@
     <Compile Include="path_heading_kappa_output.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="path_making.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="test_path.py" />
     <Compile Include="Set_VehiclePath.py" />
     <Compile Include="visualize_traj.py.py" />

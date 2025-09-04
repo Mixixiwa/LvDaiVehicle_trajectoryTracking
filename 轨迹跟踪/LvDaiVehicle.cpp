@@ -17,6 +17,8 @@
 #include "ProjectionMatcher.h"
 #include "ErrorCalculator.h"
 #include"GPS_serial.h"
+#include <thread>
+#include <iomanip>
 
 SERIALPORT serialPort;
 SERIALPORT* pserial = &serialPort;
@@ -53,7 +55,7 @@ DWORD WINAPI PortSend(LPVOID lpParameter)
 int main()     
 {
     //控制器串口号
-    pserial->m_comNum = 1;
+    pserial->m_comNum = 5;
     memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
     if (pserial->m_comNum < 10)
     {
@@ -75,14 +77,14 @@ int main()
     }
 
     //GPS串口
-    /*
-    SerialPort serial("COM1", CBR_115200);  // 修改为你的串口号
+    
+    SerialPort serial("COM4", CBR_115200);  // 修改为你的串口号
     if (!serial.open()) {
         std::cerr << "Failed to open serial port.\n";
         return 1;
     }
     std::cout << "Reading GPS data...\n";
-    */
+    
 
     //创建传递参数的指针变量
     TrackerOutput* trackerOutput = new TrackerOutput;
@@ -92,13 +94,13 @@ int main()
     
     //设置车辆参数和PID参数
     
-     VehicleSimulator sim(0.6); // 履带间距 b = 0.6m
-     double v_desired = 0.5;  // 前进线速度
-     PIDController heading_pid(2, 0.05, 0); // 角度 PID 控制器
+     VehicleSimulator sim(0.8); // 履带间距 b = 0.8m
+     double v_desired = 5;  // 前进线速度
+     PIDController heading_pid(3, 0.01, 0); // 角度 PID 控制器
      double dt = 0.1;
      auto& state = sim.getState();//获取车辆状态
       
-     std::ifstream file("../visualize_traj.py/Double_lane.csv");   //提取目标轨迹的文件
+     std::ifstream file("../visualize_traj.py/path.csv");   //提取目标轨迹的文件
      std::ofstream file1("../visualize_traj.py/PIDtrajectory_output.csv");
      std::ofstream file2("../visualize_traj.py/path_output.csv");
      std::ofstream file3("../visualize_traj.py/err_output.csv");
@@ -107,7 +109,7 @@ int main()
      std::ofstream file6("../visualize_traj.py/vl_vr_nl_nr_output.csv");
      //获取目标路径
      if (!file.is_open()) {
-            std::cerr << "无法打开文件 Double_lane.csv" << std::endl;
+            std::cerr << "无法打开文件 path.csv" << std::endl;
             return 1;
         }
 
@@ -153,18 +155,22 @@ int main()
    for (int i = 0; i < 5000; ++i) 
     {
         //从GPS串口中更新车辆信息
-       /*std::string line = serial.readLine();
+       std::string line = serial.readLine();
        auto gpsDataOpt = KSXTParser::parse(line);
        if (gpsDataOpt) {
            const auto& gps = gpsDataOpt.value();
            std::cout << std::fixed << std::setprecision(8) << "Time: " << gps.timestamp
-               << " | Lon: " << gps.longitude
-               << " | Lat: " << gps.latitude
                << " | X: " << KSXTParser::GPS_X
                << " | Y: " << KSXTParser::GPS_Y
-               << " | Heading: " << gps.heading
+               << " | Heading: " << gps.Heading
                << '\n';
-       }*/
+       }
+
+       state.x = KSXTParser::GPS_X;
+       state.y = KSXTParser::GPS_Y;
+       state.phi = KSXTParser::GPS_PHI;
+       state.v_x = KSXTParser::GPS_V * cos(state.phi);
+       state.v_y = KSXTParser::GPS_V * sin(state.phi);
 
        //车辆信息
         std::vector<double> x_set;
@@ -221,11 +227,11 @@ int main()
             double vR = 0;
             vR = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
 
-        sim.step(vL, vR, dt);
+        /*sim.step(vL, vR, dt);*/
         file1 << state.x << "," << state.y << "," << state.phi << "\n";
 
-        trackerOutput->v_left = 60*vL/(2*3.14*0.1);
-        trackerOutput->v_right = 60 * vR / (2 * 3.14 * 0.1);
+        trackerOutput->v_left = 60*vL/(2*3.14*0.05);
+        trackerOutput->v_right = 60 * vR / (2 * 3.14 * 0.05);
 
         file6 << i * 0.1 << "," << vL << "," << vR << "," << trackerOutput->v_left << "," << trackerOutput->v_right << "\n";
 
@@ -238,7 +244,7 @@ int main()
             }
         }
 
-        Sleep(10);//控制仿真的时间
+        Sleep(100);//控制仿真的时间
 
     }
     // 主循环结束，通知串口线程退出
