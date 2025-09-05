@@ -6,7 +6,7 @@ import numpy as np
 # ??ȡCSV????
 data1 = np.loadtxt("PIDtrajectory_output.csv", delimiter=",")
 vehicle_x,vehicle_y = data1[:, 0], data1[:, 1]
-data2 = np.loadtxt("path.csv", delimiter=",")
+data2 = np.loadtxt("Double_lane.csv", delimiter=",")
 target_x, target_y= data2[:, 0], data2[:, 1]
 
 # ??ͼ
@@ -20,12 +20,12 @@ plt.plot(vehicle_x, vehicle_y, 'b-', label='Vehicle Path')
 plt.scatter(target_x[0], target_y[0], c='green', marker='o', label='Start')
 plt.scatter(target_x[-1], target_y[-1], c='red', marker='x', label='Goal')
 
-plt.xlim(0, 10)      # ??????? 0 ?? 200
-plt.ylim(-1, 2)     # ??????? -5 ?? 10
+plt.xlim(0, 200)      # ??????? 0 ?? 200
+plt.ylim(-1, 4)     # ??????? -5 ?? 10
 plt.xlabel("X Position (m)")
 plt.ylabel("Y Position (m)")
 plt.title("Tracked Path vs Target Path")
-#plt.axis("equal")  ?????Ƕ?ά?켣????ʱ?????У???????ر? axis("equal")
+#plt.axis("equal")  #?????Ƕ?ά?켣????ʱ?????У???????ر? axis("equal")
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

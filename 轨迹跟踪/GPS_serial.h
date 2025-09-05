@@ -1,49 +1,63 @@
-#pragma once
-#include <windows.h>
+#ifndef GPS_RECEIVER_H
+#define GPS_RECEIVER_H
+
 #include <string>
 #include <queue>
 #include <mutex>
-#include <optional>
+#include <thread>
+#include <atomic>
+#include <fstream>
+#include <windows.h>
 
+// GPS 数据结构体
+struct GPSData {
+    std::string time;   // 时间戳
+    double longitude;   // 经度
+    double latitude;    // 纬度
+    double altitude;    // 高度
+    double speed;       // 速度
+    double heading;     // 航向角
+    double x;           // 转换后的平面坐标X
+    double y;           // 转换后的平面坐标Y
+};
 
-class SerialPort {
+class GPSReceiver {
 public:
-    SerialPort(const std::string& portName, DWORD baudRate = CBR_115200);
-    ~SerialPort();
-    bool open();
-    void close();
-    std::string readLine();
-    bool isOpen() const;
+    GPSReceiver(const std::string& portName, unsigned int baudRate);
+    ~GPSReceiver();
+
+    void start();   // 启动接收线程
+    void stop();    // 停止接收线程
+    void processFrame();  // 处理并解析一帧
+
+    // 主函数获取最新 GPS 数据
+    bool getLatestData(GPSData& data);
 
 private:
-    std::string portName;
-    HANDLE hSerial;
-    DWORD baudRate;
+    std::string portName_;
+    unsigned int baudRate_;
+    HANDLE hSerial_;   // 串口句柄
+    std::queue<std::string> frameQueue_;
+    std::mutex queueMutex_;
+    std::atomic<bool> running_;
+    std::thread recvThread_;
+    std::ofstream csvFile_;
+
+
+    bool refSet_;       // 参考点是否已设置
+    double refLon_;     // 参考点经度
+    double refLat_;     // 参考点纬度
+    double refAlt_;     //参考点高度
+
+    std::mutex dataMutex_;    // 保护 latestData_
+    GPSData latestData_;      // 最新解析的数据
+
+    void serialReceiver();         // 串口接收线程
+    void parseFrame(const std::string& frame); // 解析一帧
+    bool verifyChecksum(const std::string& frame); // 校验和
+    void saveToCSV(const GPSData& data); // 写入CSV
+    void convertToXY(GPSData& data); // 经纬度转平面坐标
 };
 
-struct GPSData {
-    std::string timestamp;
-    double Longitude;  //经度 度  小数点后八位
-    double Latitude;   //维度  度  小数点后八位
-    double Alt;  //高度，米  小数点后四位
-    double Heading;    ////地面航向，从北向起顺时针计算  0~360°  小数点后两位
-    double Pitch;  //俯仰角  -90°~90° 小数点后两位
-    double Track; //速度角 度
-    double Vel;  //速度  单位：米/秒
-    double Roll; //横滚角 度
-
-    //double East;       // 以基站为坐标原点的地理坐标系下，东向位置，单位米
-    //double North;        // 以基站为坐标原点的地理坐标系下，北向位置，单位米
-    //double Heading;       //地面航向，从北向起顺时针计算
-};
-
-class KSXTParser {
-public:
-    static std::optional<GPSData> parse(const std::string& line);
-
-    static double GPS_X;  //East
-    static double GPS_Y;  //North
-    static double GPS_Z;  //Up
-    static double GPS_V;
-    static double GPS_PHI;
-};
+#endif // GPS_RECEIVER_H
+#pragma once

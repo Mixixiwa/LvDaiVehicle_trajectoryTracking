@@ -2,74 +2,13 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 #include <cmath>
-#include<iomanip>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-//GPS串口部分
-SerialPort::SerialPort(const std::string& port, DWORD baud)
-    : portName(port), baudRate(baud), hSerial(INVALID_HANDLE_VALUE) {
-}
-
-SerialPort::~SerialPort() {
-    close();
-}
-
-bool SerialPort::open() {
-    hSerial = CreateFileA(portName.c_str(), GENERIC_READ, 0, nullptr,
-        OPEN_EXISTING, 0, nullptr);
-
-    if (hSerial == INVALID_HANDLE_VALUE) {
-        std::cerr << "Failed to open port: " << portName << "\n";
-        return false;
-    }
-
-    DCB dcb = { 0 };
-    dcb.DCBlength = sizeof(DCB);
-    if (!GetCommState(hSerial, &dcb)) return false;
-
-    dcb.BaudRate = baudRate;
-    dcb.ByteSize = 8;
-    dcb.Parity = NOPARITY;
-    dcb.StopBits = ONESTOPBIT;
-
-    if (!SetCommState(hSerial, &dcb)) return false;
-
-    COMMTIMEOUTS timeouts = { 50, 0, 50, 0, 0 };
-    SetCommTimeouts(hSerial, &timeouts);
-
-    return true;
-}
-
-void SerialPort::close() {
-    if (hSerial != INVALID_HANDLE_VALUE) {
-        CloseHandle(hSerial);
-        hSerial = INVALID_HANDLE_VALUE;
-    }
-}
-
-bool SerialPort::isOpen() const {
-    return hSerial != INVALID_HANDLE_VALUE;
-}
-
-std::string SerialPort::readLine() {
-    char ch;
-    DWORD bytesRead;
-    std::string result;
-
-    while (true) {
-        if (!ReadFile(hSerial, &ch, 1, &bytesRead, nullptr) || bytesRead == 0)
-            break;
-        if (ch == '\n') break;
-        result += ch;
-    }
-
-    return result;
-}
-
-//GPS  坐标转换部分
+//GPS  坐标转换
 
 // 地球参数（WGS84）单位：米
 constexpr double a = 6378137.0;               // 长半轴 单位：米
@@ -133,83 +72,207 @@ void lla_to_enu(double lat, double lon, double alt,
     ecef_to_enu(x, y, z, x_ref, y_ref, z_ref, ref_lat, ref_lon, east, north, up);
 }
 
-//GPS串口信息解析，并完成坐标转换
-static std::vector<std::string> split(const std::string& str, char delim) {
-    std::stringstream ss(str);
-    std::string item;
-    std::vector<std::string> elems;
-    while (std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
+// ---------------- GPSReceiver ----------------
+
+GPSReceiver::GPSReceiver(const std::string& portName, unsigned int baudRate)
+    : portName_(portName), baudRate_(baudRate), running_(false), refSet_(false), hSerial_(INVALID_HANDLE_VALUE) {
+    csvFile_.open("gps_log.csv", std::ios::out);
+    csvFile_ << "Time,X,Y,Altitude,Speed,Heading\n";
 }
 
-std::optional<GPSData> base_point;
-double KSXTParser::GPS_X = 0.0;
-double KSXTParser::GPS_Y = 0.0;
-double KSXTParser::GPS_Z = 0.0;
-double KSXTParser::GPS_V = 0.0;
-double KSXTParser::GPS_PHI = 0.0;
-std::optional<GPSData> KSXTParser::parse(const std::string& line) {
-    if (line.rfind("$KSXT", 0) != 0) return std::nullopt;
+GPSReceiver::~GPSReceiver() {
+    stop();
+    if (csvFile_.is_open()) {
+        csvFile_.close();
+    }
+    if (hSerial_ != INVALID_HANDLE_VALUE) {
+        CloseHandle(hSerial_);
+    }
+}
 
-    auto tokens = split(line, ',');
-    /*if (tokens.size() != 22) {
-        std::cerr << "[错误] 字段数量应为22，当前为：" << tokens.size() << std::endl;
-        return std::nullopt;
-    }*/
+// 启动接收线程
+void GPSReceiver::start() {
+    running_ = true;
+    recvThread_ = std::thread(&GPSReceiver::serialReceiver, this);
+}
 
-    try {
+// 停止接收线程
+void GPSReceiver::stop() {
+    running_ = false;
+    if (recvThread_.joinable()) {
+        recvThread_.join();
+    }
+}
+
+// 串口接收线程
+void GPSReceiver::serialReceiver() {
+    // 打开串口
+    std::wstring wport(portName_.begin(), portName_.end());
+    hSerial_ = CreateFileW(wport.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+    if (hSerial_ == INVALID_HANDLE_VALUE) {
+        std::cerr << "无法打开串口 " << portName_ << std::endl;
+        return;
+    }
+
+    // 配置串口参数
+    DCB dcbSerialParams = { 0 };
+    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+    if (!GetCommState(hSerial_, &dcbSerialParams)) {
+        std::cerr << "获取串口配置失败！" << std::endl;
+        return;
+    }
+
+    dcbSerialParams.BaudRate = baudRate_;
+    dcbSerialParams.ByteSize = 8;
+    dcbSerialParams.StopBits = ONESTOPBIT;
+    dcbSerialParams.Parity = NOPARITY;
+
+    if (!SetCommState(hSerial_, &dcbSerialParams)) {
+        std::cerr << "设置串口参数失败！" << std::endl;
+        return;
+    }
+
+    // 设置串口超时
+    COMMTIMEOUTS timeouts = { 0 };
+    timeouts.ReadIntervalTimeout = 50;
+    timeouts.ReadTotalTimeoutConstant = 50;
+    timeouts.ReadTotalTimeoutMultiplier = 10;
+    SetCommTimeouts(hSerial_, &timeouts);
+
+    // 接收缓冲
+    char buffer[256];
+    std::string recvBuffer;
+
+    while (running_) {
+        DWORD bytesRead;
+        if (ReadFile(hSerial_, buffer, sizeof(buffer), &bytesRead, nullptr)) {
+            recvBuffer.append(buffer, bytesRead);
+
+            size_t pos;
+            while ((pos = recvBuffer.find('\n')) != std::string::npos) {
+                std::string frame = recvBuffer.substr(0, pos);
+                recvBuffer.erase(0, pos + 1);
+
+                std::lock_guard<std::mutex> lock(queueMutex_);
+                frameQueue_.push(frame);
+            }
+        }
+    }
+}
+
+// 校验和
+bool GPSReceiver::verifyChecksum(const std::string& frame) {
+    size_t starPos = frame.find('*');
+    if (starPos == std::string::npos) return false;
+
+    unsigned char checksum = 0;
+    for (size_t i = 1; i < starPos; ++i) {
+        checksum ^= static_cast<unsigned char>(frame[i]);
+    }
+
+    std::string hexStr = frame.substr(starPos + 1, 2);
+    unsigned int receivedChecksum;
+    std::stringstream ss;
+    ss << std::hex << hexStr;
+    ss >> receivedChecksum;
+
+    return checksum == receivedChecksum;
+}
+
+// 处理一帧
+void GPSReceiver::processFrame() {
+    std::string frame;
+    {
+        std::lock_guard<std::mutex> lock(queueMutex_);
+        if (frameQueue_.empty()) return;
+        frame = frameQueue_.front();
+        frameQueue_.pop();
+    }
+    parseFrame(frame);
+}
+
+// 解析一帧
+void GPSReceiver::parseFrame(const std::string& frame) {
+    if (!verifyChecksum(frame)) {
+        std::cerr << "校验和错误: " << frame << std::endl;
+        return;
+    }
+
+    std::stringstream ss(frame);
+    std::string token;
+    std::vector<std::string> fields;
+
+    while (std::getline(ss, token, ',')) {
+        size_t starPos = token.find('*');
+        if (starPos != std::string::npos) {
+            token = token.substr(0, starPos);
+        }
+        fields.push_back(token);
+    }
+
+    if (fields.size() >= 7) {
         GPSData data;
-        data.timestamp = tokens[1];
-        data.Longitude = std::round(std::stod(tokens[2]) * 1e8) / 1e8;  //将一个浮点数保留 小数点后八位，并赋值给变量
-        data.Latitude = std::round(std::stod(tokens[3]) * 1e8) / 1e8;
-        data.Alt = std::round(std::stod(tokens[4]) * 1e4) / 1e4;
-        data.Heading = std::round(std::stod(tokens[5]) * 1e2) / 1e2;
-        data.Pitch = std::round(std::stod(tokens[6]) * 1e2) / 1e2;
-        data.Track = std::round(std::stod(tokens[7]) * 1e2) / 1e2;
-        data.Vel = std::round(std::stod(tokens[8]) * 1e3) / 1e3;
-        data.Roll = std::round(std::stod(tokens[9]) * 1e2) / 1e2;
+        data.time = fields[1];
+        data.longitude = std::stod(fields[2]);
+        data.latitude = std::stod(fields[3]);
+        data.altitude = std::stod(fields[4]);
+        data.speed = std::stod(fields[5]);
+        data.heading = std::stod(fields[6]);
 
-        // 处理最后一个字段，提取数值和校验和
-        /*size_t pos = tokens[21].find('*');
-        if (pos != std::string::npos) {
-            data.gyro_bias_y = std::stod(tokens[21].substr(0, pos));
-            data.checksum = tokens[21].substr(pos + 1);
-        }
-        else {
-            data.gyro_bias_y = std::stod(tokens[21]);
-            data.checksum = "";
-        }*/
+        convertToXY(data);
 
-        //将GPS经纬度转化为坐标
-        // 当前 GPS 坐标
-        double lon = data.Longitude;  // 经度
-        double lat = data.Latitude;   // 纬度
-        double alt = data.Alt;       // 高度
+        /*std::cout << "Time: " << data.time
+            << " X: " << data.x
+            << " Y: " << data.y
+            << " Alt: " << data.altitude
+            << " Spd: " << data.speed
+            << " Head: " << data.heading << std::endl;*/
 
-        // 基准点（如起点或地图中心）
+        saveToCSV(data);
 
-        if (!base_point.has_value())
+        // 保存最新数据
         {
-            base_point = data;  // 保存第一次接收到的 GPS 数据
-            std::cout << std::fixed << std::setprecision(8) << "保存基准点: 经度=" << base_point->Longitude
-                << ", 纬度=" << base_point->Latitude << std::endl;
+            std::lock_guard<std::mutex> lock(dataMutex_);
+            latestData_ = data;
         }
-
-        double east, north, up;
-        lla_to_enu(data.Latitude, data.Longitude, data.Alt, base_point->Latitude, base_point->Longitude, base_point->Alt, east, north, up);
-
-        GPS_X = east;
-        GPS_Y = north;
-        GPS_Z = up;
-        GPS_V= data.Vel;
-        GPS_PHI= data.Heading;
-
-        return data;
     }
-    catch (const std::exception& e) {
-        std::cerr << "解析异常：" << e.what() << std::endl;
-        return std::nullopt;
+}
+
+// 经纬度转平面坐标
+void GPSReceiver::convertToXY(GPSData& data) {
+
+    if (!refSet_) {
+        refLon_ = data.longitude;
+        refLat_ = data.latitude;
+        refAlt_ = data.altitude;
+        refSet_ = true;
     }
+    double east, north, up;
+    lla_to_enu(data.latitude, data.longitude, data.altitude, refLat_, refLon_, refAlt_, east, north, up);
+
+
+    data.x = east;
+    data.y = north;
+}
+
+// 保存到CSV
+void GPSReceiver::saveToCSV(const GPSData& data) {
+    if (csvFile_.is_open()) {
+        csvFile_ << data.time << ","
+            << std::fixed << std::setprecision(3) << data.x << ","
+            << data.y << ","
+            << data.altitude << ","
+            << data.speed << ","
+            << data.heading << "\n";
+    }
+}
+
+// 主函数获取最新数据
+bool GPSReceiver::getLatestData(GPSData& data) {
+    std::lock_guard<std::mutex> lock(dataMutex_);
+    if (!refSet_) return false;
+    data = latestData_;
+    return true;
 }
