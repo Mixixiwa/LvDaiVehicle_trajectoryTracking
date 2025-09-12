@@ -218,8 +218,8 @@ void GPSReceiver::parseFrame(const std::string& frame) {
         data.longitude = std::stod(fields[2]);
         data.latitude = std::stod(fields[3]);
         data.altitude = std::stod(fields[4]);
-        data.speed = std::stod(fields[5]);
-        data.heading = std::stod(fields[6]);
+        data.speed = std::stod(fields[8]);
+        data.heading = std::stod(fields[5]);
 
         convertToXY(data);
 

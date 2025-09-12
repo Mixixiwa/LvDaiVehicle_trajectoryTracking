@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = np.loadtxt("path_heading_kappa_output.csv", delimiter=",")
+data = np.loadtxt("path_heading_kappa_output_test_01.csv", delimiter=",")
 x = data[:, 0]
 y1 = data[:, 1]
 y2 = data[:,2]

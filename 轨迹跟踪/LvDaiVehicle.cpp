@@ -19,6 +19,9 @@
 #include"GPS_serial.h"
 #include <thread>
 #include <iomanip>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 SERIALPORT serialPort;
 SERIALPORT* pserial = &serialPort;
@@ -52,10 +55,10 @@ DWORD WINAPI PortSend(LPVOID lpParameter)
 }
 
 //测试履带车模型
-int main()     
+int main()
 {
     //控制器串口号
-    pserial->m_comNum = 1;
+    pserial->m_comNum = 4;
     memset(pserial->m_comBuf, 0, sizeof(pserial->m_comBuf));
     if (pserial->m_comNum < 10)
     {
@@ -77,62 +80,64 @@ int main()
     }
 
     //GPS串口
-    /*GPSReceiver gps("COM1", 115200);
+    GPSReceiver gps("COM1", 115200);
     gps.start();
-    GPSData data;*/
+    GPSData data;
 
     //创建传递参数的指针变量
     TrackerOutput* trackerOutput = new TrackerOutput;
     trackerOutput->v_left = 0;
     trackerOutput->v_right = 0;
     HANDLE hSend = CreateThread(NULL, 0, &PortSend, trackerOutput, 0, NULL);//创建发送线程
-    
+
     //设置车辆参数和PID参数
-    
-     VehicleSimulator sim(0.8); // 履带间距 b = 0.8m
-     double v_desired = 5;  // 前进线速度
-     PIDController heading_pid(3, 0.01, 0); // 角度 PID 控制器
-     double dt = 0.1;
-     auto& state = sim.getState();//获取车辆状态
-      
-     std::ifstream file("../visualize_traj.py/Double_lane.csv");   //提取目标轨迹的文件
-     std::ofstream file1("../visualize_traj.py/PIDtrajectory_output.csv");
-     std::ofstream file2("../visualize_traj.py/path_output.csv");
-     std::ofstream file3("../visualize_traj.py/err_output.csv");
-     std::ofstream file4("../visualize_traj.py/path_heading_kappa_output.csv");
-     std::ofstream file5("../visualize_traj.py/MatchPoint_index_heading_kappa_output.csv");
-     std::ofstream file6("../visualize_traj.py/vl_vr_nl_nr_output.csv");
-     //获取目标路径
-     if (!file.is_open()) {
-            std::cerr << "无法打开文件 path.csv" << std::endl;
-            return 1;
-        }
 
-     std::vector<std::pair<double, double>> path;
-     std::string line;
+    VehicleSimulator sim(0.8); // 履带间距 b = 0.8m
+    double v_desired = 1;  // 前进线速度
+    PIDController heading_pid(5, 0, 0); // 角度 PID 控制器
+    double dt = 0.1;
 
-     while (std::getline(file, line)) 
-     {
+
+    std::ifstream file("../visualize_traj.py/Double_lane.csv");   //提取目标轨迹的文件
+
+    std::ofstream file1("../visualize_traj.py/PIDtrajectory_output_test_05.csv");
+    std::ofstream file2("../visualize_traj.py/path_output_test_05.csv");
+    std::ofstream file3("../visualize_traj.py/err_output_test_05.csv");
+    std::ofstream file4("../visualize_traj.py/path_heading_kappa_output_test_05.csv");
+    std::ofstream file5("../visualize_traj.py/MatchPoint_index_heading_kappa_output_test_05.csv");
+    std::ofstream file6("../visualize_traj.py/vl_vr_nl_nr_output_test_05.csv");
+    std::ofstream file7("../visualize_traj.py/GPS_LvDaiCheDianJi_test_05.csv");
+    //获取目标路径
+    if (!file.is_open()) {
+        std::cerr << "无法打开文件 path.csv" << std::endl;
+        return 1;
+    }
+
+    std::vector<std::pair<double, double>> path;
+    std::string line;
+
+    while (std::getline(file, line))
+    {
         std::stringstream ss(line);
         std::string x_str, y_str;
 
-        if (std::getline(ss, x_str, ',') && std::getline(ss, y_str)) 
+        if (std::getline(ss, x_str, ',') && std::getline(ss, y_str))
         {
             double x = std::stod(x_str);
             double y = std::stod(y_str);
             path.emplace_back(x, y);
             file2 << x << "," << y << "\n";
         }
-     }
+    }
 
-     //目标路径
+    //目标路径
     std::vector<double> path_x;
     std::vector<double> path_y;
     size_t N0 = path.size();
     path_x.resize(N0);
     path_y.resize(N0);
 
-    for (size_t i = 0; i < N0; ++i) 
+    for (size_t i = 0; i < N0; ++i)
     {
         path_x[i] = path[i].first;
         path_y[i] = path[i].second;
@@ -141,39 +146,39 @@ int main()
     //计算目标路径的航向角和曲率
     std::vector<double> heading, kappa;
     computePathHeadingAndKappa(path, heading, kappa);
-    
+
     for (size_t i = 0; i < N0; ++i) {
         file4 << path_x[i] << "," << path_y[i] << "," << heading[i] << "," << kappa[i] << "\n";
     }
 
     //开始轨迹跟踪仿真，仿真时间5000*0.1=500（s）
-   for (int i = 0; i < 500; ++i) 
+    for (int i = 0; i < 2000; ++i)
     {
         //从GPS串口中更新车辆信息
-       /*gps.processFrame();
-       if (gps.getLatestData(data)) {
-           std::cout << "Time: " << data.time
-               << " X: " << data.x
-               << " Y: " << data.y
-               << " Alt: " << data.altitude
-               << " Speed: " << data.speed
-               << " Heading: " << data.heading << std::endl;
-       }
+        gps.processFrame();
+        if (gps.getLatestData(data))
+        {
+            std::cout << "Time: " << data.time
+                << " X: " << data.x
+                << " Y: " << data.y
+                << " Alt: " << data.altitude
+                << " Speed: " << data.speed
+                << " Heading: " << data.heading << std::endl;
+        }
 
-       state.x = data.x;
-       state.y = data.y;
-       state.phi = data.heading;
-       state.v_x = data.speed * cos(state.phi);
-       state.v_y = data.speed * sin(state.phi);*/
+        sim.instae(data.x, data.y, data.heading, data.speed);
 
-       //车辆信息
+        auto& state = sim.getState();//获取车辆状态
+
+        //车辆信息
         std::vector<double> x_set;
         std::vector<double> y_set;
         size_t N1 = 1;
         x_set.resize(N1);
         y_set.resize(N1);
 
-        for (size_t i = 0; i < N1; ++i) {
+        for (size_t i = 0; i < N1; ++i) 
+        {
             x_set[i] = state.x;
             y_set[i] = state.y;
         }
@@ -183,7 +188,7 @@ int main()
         ProjectionResult res = matcher.matchProjection(x_set, y_set, path_x, path_y, heading, kappa);
 
         int target_idx = res.match_point_index_set[0];
-        
+
         if (target_idx >= path.size()) break;
 
         // 匹配点坐标,航向角，曲率
@@ -209,7 +214,7 @@ int main()
             kappar_desire,             // kappar
             err, es, s_dot
         );
-        file3 << i * 0.1 << "," << err[0]<<","<<err[1]<<","<<err[2]<<","<<err[3] << "\n";
+        file3 << i * 0.1 << "," << err[0] << "," << err[1] << "," << err[2] << "," << err[3] << "\n";
 
 
         // 用PID，通过横向误差计算角速度命令
@@ -217,20 +222,21 @@ int main()
 
         // 计算履带速度
         double vL = 0;
-            vL = v_desired + 0.5 * sim.getTrackWidth() * omega_cmd;
-            double vR = 0;
-            vR = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
+        vL = v_desired + 0.5 * sim.getTrackWidth() * omega_cmd;
+        double vR = 0;
+        vR = v_desired - 0.5 * sim.getTrackWidth() * omega_cmd;
 
-        sim.step(vL, vR, dt);
-        file1 << state.x << "," << state.y << "," << state.phi << "\n";
+        //sim.step(vL, vR, dt);
+        file1 << state.x << "," << state.y << "," << state.phi << "," << state.v_x << "," << state.v_y << "\n";
 
-        trackerOutput->v_left = 60*vL/(2*3.14*0.05);
-        trackerOutput->v_right = 60 * vR / (2 * 3.14 * 0.05);
+        trackerOutput->v_left = 4 * 60 * vL / (2 * M_PI * 0.05);
+        trackerOutput->v_right = 4 * 60 * vR / (2 * M_PI * 0.05);
 
-        file6 << i * 0.1 << "," << vL << "," << vR << "," << trackerOutput->v_left << "," << trackerOutput->v_right << "\n";
+        file6 << i * 0.1 << "," << omega_cmd << "," << vL << "," << vR << "," << trackerOutput->v_left << "," << trackerOutput->v_right << "\n";
 
-	    int lifeSignal = 0; //心跳计时
-        if (_kbhit()) {
+        int lifeSignal = 0; //心跳计时
+        if (_kbhit()) 
+        {
             int ch = _getch();
             if (ch == 'q') {
                 quitFlag = true;
@@ -238,7 +244,10 @@ int main()
             }
         }
 
-        Sleep(100);//控制仿真的时间
+        double vehile_speed = (pserial->m_aSpeedNow + pserial->m_bSpeedNow) / 2;
+        file7 << data.speed << "," << vehile_speed << "," << pserial->m_aSpeedNow << "," << pserial->m_bSpeedNow << "\n";
+
+        Sleep(1000);//控制仿真的时间
 
     }
     // 主循环结束，通知串口线程退出
@@ -262,7 +271,7 @@ int main()
     file6.close();
     std::cout << "Simulation complete.\n";
     return 0;
-}
+ }
 
 
 // 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
